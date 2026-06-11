@@ -1,0 +1,53 @@
+---
+description: Placement rules for interactables, triggers, decor, and landmarks in ChainCivilizationV1
+globs: Assets/Scripts/**/*.cs
+alwaysApply: false
+---
+
+# Interact Object Placement Rules
+
+When placing or spawning objects in this Unity project, follow these height rules.
+
+## Interactables (可交互物体)
+
+Examples: `CivilizationSeed`, `MoonCrystal`, DAO steles, civilization flags/markers.
+
+- **Height:** 0~1.5m above ground
+- **Ground snap:** use `GroundSnapUtility.SnapTransform()` on Start or after spawn
+- **CivilizationSeed:** float 1~1.5m above ground; player must reach without jumping
+- **Debug:** `InteractGroundDebugChecker` warns if ground gap > 2m
+
+## Interaction Triggers (交互触发器)
+
+Examples: `BoundaryTrigger`, `DAOPassEntryZone`.
+
+- **Must be on ground** — player walks to location, no jump required
+- Trigger center typically ~1m above ground
+- Use `GroundSnapUtility` in `Awake`/`Start`
+
+## Decorative Objects (装饰物)
+
+Examples: particles, lights, route markers, path stones.
+
+- **Any height** — no ground snap required
+
+## Landmark Buildings (地标建筑)
+
+Examples: `BoundaryStone`, DAO ruins/platforms, large monuments.
+
+- **Any height** — visual-only scale is allowed
+- Interaction happens via separate ground-level triggers, not the mesh itself
+
+## Implementation
+
+- Shared utility: `GroundSnapUtility.cs`
+- Rules constants: `InteractPlacementRules.cs`
+- Runtime validation: `InteractGroundDebugChecker.cs` (auto-runs on play)
+
+## Spawn Code Checklist
+
+When using `CreatePrimitive`, `Instantiate`, or manual `transform.position`:
+
+1. Raycast down from above with `GroundSnapUtility.TryGetGroundPoint`
+2. Apply correct height offset for object category
+3. Never rely on scene Y alone for interactables under tall parents

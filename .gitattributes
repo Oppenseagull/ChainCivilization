@@ -1,0 +1,35 @@
+# Normalize text files so Unity YAML assets diff cleanly.
+* text=auto
+
+*.cs text eol=crlf
+*.asmdef text eol=crlf
+*.shader text eol=crlf
+*.hlsl text eol=crlf
+*.cginc text eol=crlf
+*.json text eol=crlf
+*.md text eol=crlf
+*.txt text eol=crlf
+*.unity text eol=crlf
+*.prefab text eol=crlf
+*.asset text eol=crlf
+*.mat text eol=crlf
+*.meta text eol=crlf
+*.controller text eol=crlf
+*.anim text eol=crlf
+*.inputactions text eol=crlf
+
+# Common Unity binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.psd binary
+*.fbx binary
+*.blend binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.mp4 binary
+*.mov binary
+*.ttf binary
+*.otf binary

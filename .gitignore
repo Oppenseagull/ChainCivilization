@@ -1,0 +1,47 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Unity generated files
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+sysinfo.txt
+
+# Unity crash/debug output
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Aa]ssets/AssetStoreTools*
+
+# IDE/editor local state
+.vs/
+.vscode/
+.idea/
+.consulo/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local tool configuration
+.cursor/mcp.json
+
+# Generated compile logs from local experiments
+compile_*.txt
+hud_compile_log.txt
+unity-mcp-install.log
