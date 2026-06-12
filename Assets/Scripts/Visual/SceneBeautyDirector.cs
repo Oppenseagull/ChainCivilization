@@ -70,9 +70,11 @@ public class SceneBeautyDirector : MonoBehaviour
         LoadResources();
         PrepareMaterials();
         PrepareRoot();
+        DisableLegacyProceduralScenery();
         ApplySkyAndLighting();
         StyleGround();
         BuildPaths();
+        BuildRoadsideDressing();
         BuildNature();
         BuildDaoSites();
         BuildBoundarySite();
@@ -122,6 +124,24 @@ public class SceneBeautyDirector : MonoBehaviour
         }
 
         _root = new GameObject(RootName).transform;
+    }
+
+    void DisableLegacyProceduralScenery()
+    {
+        EnvironmentPropSpawner spawner = FindAnyObjectByType<EnvironmentPropSpawner>();
+        if (spawner == null)
+        {
+            return;
+        }
+
+        spawner.ClearProps();
+        spawner.enabled = false;
+
+        Transform oldRoot = spawner.transform.Find("EnvironmentProps");
+        if (oldRoot != null)
+        {
+            Destroy(oldRoot.gameObject);
+        }
     }
 
     void ApplySkyAndLighting()
@@ -200,6 +220,56 @@ public class SceneBeautyDirector : MonoBehaviour
         CreateCluster(new Vector3(378f, 0f, -452f), 18f, 18, 400);
         CreateCluster(new Vector3(-238f, 0f, -164f), 24f, 24, 500);
         CreateCluster(new Vector3(172f, 0f, 242f), 24f, 24, 600);
+    }
+
+    void BuildRoadsideDressing()
+    {
+        PlaceRoadsideDressing(Spawn, BlueDao, 34, 11);
+        PlaceRoadsideDressing(BlueDao, RedDao, 46, 23);
+        PlaceRoadsideDressing(RedDao, GreenDao, 46, 37);
+        PlaceRoadsideDressing(GreenDao, Boundary, 26, 51);
+        PlaceRoadsideDressing(Boundary, CivilizationSeed, 12, 67);
+    }
+
+    void PlaceRoadsideDressing(Vector3 from, Vector3 to, int count, int seed)
+    {
+        Vector3 dir = (to - from).normalized;
+        Vector3 lateral = new Vector3(-dir.z, 0f, dir.x);
+
+        for (int i = 1; i < count; i++)
+        {
+            float t = i / (float)count;
+            float side = i % 2 == 0 ? -1f : 1f;
+            float wave = Mathf.Sin((seed + i) * 1.73f);
+            float offset = 13f + Mathf.Abs(wave) * 10f + (i % 4) * 1.35f;
+            Vector3 pos = Vector3.Lerp(from, to, t)
+                + lateral * side * offset
+                + dir * Mathf.Sin((seed + i) * 0.61f) * 4.5f;
+
+            switch ((i + seed) % 9)
+            {
+                case 0:
+                    CreateTree(_root, pos, 0.9f + (i % 3) * 0.16f, seed * 9f + i * 17f);
+                    break;
+                case 1:
+                case 2:
+                    CreateShrub(_root, pos, 0.9f + (i % 3) * 0.12f);
+                    break;
+                case 3:
+                case 4:
+                    CreateGrass(_root, pos, 1.0f + (i % 4) * 0.18f);
+                    break;
+                case 5:
+                    CreateFlower(_root, pos, 1.0f + (i % 3) * 0.14f);
+                    break;
+                case 6:
+                    CreateMushroom(_root, pos, 0.85f + (i % 2) * 0.16f);
+                    break;
+                default:
+                    CreateRock(_root, pos, 0.65f + (i % 4) * 0.12f, seed * 13f + i * 29f);
+                    break;
+            }
+        }
     }
 
     void BuildDaoSites()
@@ -282,12 +352,12 @@ public class SceneBeautyDirector : MonoBehaviour
 
     void CreatePatch(string name, Vector3 position, Vector3 scale, float yaw)
     {
-        GameObject patch = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject patch = GameObject.CreatePrimitive(PrimitiveType.Plane);
         patch.name = name;
         patch.transform.SetParent(_root, true);
-        patch.transform.position = position;
+        patch.transform.position = new Vector3(position.x, 0.004f, position.z);
         patch.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-        patch.transform.localScale = scale;
+        patch.transform.localScale = new Vector3(scale.x / 10f, 1f, scale.z / 10f);
         RemoveCollider(patch);
         SetMaterial(patch, _meadowMat);
     }
@@ -298,12 +368,12 @@ public class SceneBeautyDirector : MonoBehaviour
         float length = new Vector2(delta.x, delta.z).magnitude;
         float yaw = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
 
-        GameObject path = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject path = GameObject.CreatePrimitive(PrimitiveType.Plane);
         path.name = "Asset_Textured_Path";
         path.transform.SetParent(_root, false);
-        path.transform.position = (from + to) * 0.5f + Vector3.up * 0.016f;
+        path.transform.position = (from + to) * 0.5f + Vector3.up * 0.018f;
         path.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-        path.transform.localScale = new Vector3(width, 0.035f, length);
+        path.transform.localScale = new Vector3(width / 10f, 1f, length / 10f);
         RemoveCollider(path);
         SetMaterial(path, _pathMat);
     }

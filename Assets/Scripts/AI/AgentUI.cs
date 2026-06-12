@@ -266,7 +266,7 @@ public class AgentUI : MonoBehaviour
 
         if (!_welcomeShown)
         {
-            AppendLog("<color=#88DDFF>[\u5927\u796d\u53f8]</color> \u65c5\u8005\uff0c\u9760\u8fd1\u706b\u5149\u3002\u4f60\u53ef\u4ee5\u95ee\u6211 DAO\u3001Token\u3001\u58f0\u671b\u3001\u94b1\u5305\u6216\u6587\u660e\u89c4\u5219\u3002");
+            AppendLog("<color=#88DDFF>[Priest Z.AI]</color> \u65c5\u8005\uff0c\u9760\u8fd1\u706b\u5149\u3002\u4f60\u53ef\u4ee5\u95ee\u6211 DAO\u3001Token\u3001\u58f0\u671b\u3001\u94b1\u5305\u6216\u6587\u660e\u89c4\u5219\u3002");
             _welcomeShown = true;
         }
 
@@ -318,13 +318,13 @@ public class AgentUI : MonoBehaviour
 
         if (agent == null)
         {
-            AppendLog("<color=#FFB86B>[\u7cfb\u7edf]</color> \u5927\u796d\u53f8\u8fd8\u6ca1\u6709\u8fde\u63a5\u5230\u5bf9\u8bdd\u6838\u5fc3\u3002");
+            AppendLog("<color=#FFB86B>[\u7cfb\u7edf]</color> Priest Z.AI \u8fd8\u6ca1\u6709\u8fde\u63a5\u5230\u5bf9\u8bdd\u6838\u5fc3\u3002");
             return;
         }
 
         if (agent.IsBusy)
         {
-            AppendLog("<color=#FFB86B>[\u7cfb\u7edf]</color> \u5927\u796d\u53f8\u6b63\u5728\u56de\u5e94\uff0c\u8bf7\u7a0d\u7b49\u3002");
+            AppendLog("<color=#FFB86B>[\u7cfb\u7edf]</color> Priest Z.AI \u6b63\u5728\u56de\u5e94\uff0c\u8bf7\u7a0d\u7b49\u3002");
             return;
         }
 
@@ -340,7 +340,7 @@ public class AgentUI : MonoBehaviour
 
         agent.SendMessage(text, reply =>
         {
-            AppendLog($"<color=#88DDFF>[\u5927\u796d\u53f8]</color> {reply}");
+            AppendLog($"<color=#88DDFF>[Priest Z.AI]</color> {reply}");
             SetInputEnabled(true);
             if (_isOpen && inputField != null)
             {

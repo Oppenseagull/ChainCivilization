@@ -9,11 +9,11 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class AgentNPC : MonoBehaviour
 {
-    const string TalkPrompt = "\u3010\u6309 E \u4e0e\u5927\u796d\u53f8\u5bf9\u8bdd\u3011";
+    const string TalkPrompt = "\u3010\u6309 E \u4e0e Priest Z.AI \u5bf9\u8bdd\u3011";
 
     [Header("Interaction")]
     [SerializeField] float interactRadius = 5f;
-    [SerializeField] string npcName = "\u5927\u796d\u53f8";
+    [SerializeField] string npcName = "Priest Z.AI";
 
     Transform _player;
     bool _playerNear;
