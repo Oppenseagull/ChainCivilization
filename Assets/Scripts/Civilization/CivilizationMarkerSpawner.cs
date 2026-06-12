@@ -43,6 +43,11 @@ public class CivilizationMarkerSpawner : MonoBehaviour
 
     void SpawnMarker(CivilizationType type)
     {
+        StartCoroutine(CinematicRoutine(type));
+    }
+
+    IEnumerator CinematicRoutine(CivilizationType type)
+    {
         if (_currentMarker != null)
         {
             Destroy(_currentMarker);
@@ -51,35 +56,40 @@ public class CivilizationMarkerSpawner : MonoBehaviour
         Color accent = GetAccentColor(type);
         string typeName = CivilizationBonuses.GetAddressPanelCivilizationName(type);
 
-        _currentMarker = new GameObject("My Civilization");
-        _currentMarker.transform.SetParent(transform, false);
-        _currentMarker.transform.localPosition = spawnLocalPosition;
-        _currentMarker.transform.localRotation = Quaternion.identity;
+        Transform player = GameObject.Find("Player")?.transform;
+        Vector3 spawnPos = player != null ? player.position + player.forward * 30f : transform.position + spawnLocalPosition;
 
-        GameObject basePlatform = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        basePlatform.name = "Marker_Base";
-        basePlatform.transform.SetParent(_currentMarker.transform, false);
-        basePlatform.transform.localPosition = new Vector3(0f, 0.12f, 0f);
-        basePlatform.transform.localScale = new Vector3(baseRadius * 2f, 0.12f, baseRadius * 2f);
-        ApplyMaterial(basePlatform, new Color(0.66f, 0.62f, 0.5f));
-        RemoveCollider(basePlatform);
+        _currentMarker = new GameObject("My Civilization");
+        _currentMarker.transform.position = spawnPos;
+        GroundSnapUtility.SnapTransform(_currentMarker.transform, 0f);
+
+        float originalAmbient = RenderSettings.ambientIntensity;
+        for (float t = 0; t < 1f; t += Time.deltaTime)
+        {
+            RenderSettings.ambientIntensity = Mathf.Lerp(originalAmbient, 0.1f, t);
+            yield return null;
+        }
 
         GameObject pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
         pillar.name = "Marker_Pillar";
         pillar.transform.SetParent(_currentMarker.transform, false);
-        pillar.transform.localPosition = new Vector3(0f, pillarHeight * 0.5f + 0.2f, 0f);
-        pillar.transform.localScale = new Vector3(1.2f, pillarHeight, 1.2f);
+        pillar.transform.localPosition = new Vector3(0f, 50f, 0f);
+        pillar.transform.localScale = new Vector3(15f, 100f, 15f);
         ApplyMaterial(pillar, accent);
         RemoveCollider(pillar);
         _glowRenderer = pillar.GetComponent<Renderer>();
         _glowBaseColor = accent;
 
-        CreateLabelCanvas(_currentMarker.transform, typeName, accent);
+        CreateCinematicLabel(_currentMarker.transform, typeName, accent);
 
-        GroundSnapUtility.SnapTransform(_currentMarker.transform, 0f);
         VisualHierarchy.Apply(_currentMarker, VisualHierarchyTier.DaoBuilding);
+        _glowRoutine = StartCoroutine(PulseGlow());
 
-        Debug.Log($"CivilizationMarkerSpawner: spawned My Civilization ({typeName}) at {_currentMarker.transform.position}");
+        for (float t = 0; t < 1f; t += Time.deltaTime * 0.5f)
+        {
+            RenderSettings.ambientIntensity = Mathf.Lerp(0.1f, originalAmbient * 0.4f, t);
+            yield return null;
+        }
     }
 
     IEnumerator PulseGlow()
@@ -127,56 +137,29 @@ public class CivilizationMarkerSpawner : MonoBehaviour
         _glowRoutine = null;
     }
 
-    void CreateLabelCanvas(Transform parent, string typeName, Color accent)
+    void CreateCinematicLabel(Transform parent, string typeName, Color accent)
     {
-        GameObject canvasObject = new GameObject("Marker_LabelCanvas");
+        GameObject canvasObject = new GameObject("CinematicLabel");
         canvasObject.transform.SetParent(parent, false);
-        canvasObject.transform.localPosition = new Vector3(0f, pillarHeight + 1.8f, 0f);
-        canvasObject.transform.localRotation = Quaternion.identity;
-        canvasObject.transform.localScale = Vector3.one * 0.01f;
+        canvasObject.transform.localPosition = new Vector3(0f, 115f, 0f);
+        canvasObject.transform.localScale = Vector3.one * 0.2f;
 
         Canvas canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
-
+        
         RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = new Vector2(420f, 160f);
+        canvasRect.sizeDelta = new Vector2(1000f, 400f);
 
-        GameObject panel = CreateUiObject("MarkerPanel", canvasObject.transform);
-        RectTransform panelRect = panel.GetComponent<RectTransform>();
-        StretchFull(panelRect);
-
-        Image panelImage = panel.AddComponent<Image>();
-        panelImage.color = new Color(0.06f, 0.1f, 0.16f, 0.92f);
-
-        GameObject titleObject = CreateUiObject("MarkerTitle", panel.transform);
-        RectTransform titleRect = titleObject.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0f, 0.52f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.offsetMin = Vector2.zero;
-        titleRect.offsetMax = Vector2.zero;
-
-        Text title = titleObject.AddComponent<Text>();
-        title.text = "My Civilization";
+        GameObject titleObj = CreateUiObject("TitleText", canvasObject.transform);
+        StretchFull(titleObj.GetComponent<RectTransform>());
+        Text title = titleObj.AddComponent<Text>();
+        title.text = typeName.ToUpperInvariant() + "\nCIVILIZATION\nHAS RISEN";
         title.alignment = TextAnchor.MiddleCenter;
         title.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        title.fontSize = 34;
+        title.fontSize = 80;
         title.fontStyle = FontStyle.Bold;
-        title.color = new Color(1f, 0.92f, 0.45f);
-
-        GameObject typeObject = CreateUiObject("MarkerType", panel.transform);
-        RectTransform typeRect = typeObject.GetComponent<RectTransform>();
-        typeRect.anchorMin = new Vector2(0f, 0f);
-        typeRect.anchorMax = new Vector2(1f, 0.48f);
-        typeRect.offsetMin = Vector2.zero;
-        typeRect.offsetMax = Vector2.zero;
-
-        Text typeText = typeObject.AddComponent<Text>();
-        typeText.text = typeName;
-        typeText.alignment = TextAnchor.MiddleCenter;
-        typeText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        typeText.fontSize = 28;
-        typeText.color = accent;
-
+        title.color = accent;
+        
         BillboardLabel billboard = canvasObject.AddComponent<BillboardLabel>();
         billboard.enabled = true;
     }

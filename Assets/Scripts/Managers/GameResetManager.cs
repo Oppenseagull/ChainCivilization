@@ -28,21 +28,28 @@ public class GameResetManager : MonoBehaviour
 
     void Update()
     {
-        Debug.Log("[Restart] Update");
-
         if (_isRestarting)
+        {
+            return;
+        }
+
+        if (!_menuOpen && GameplayInputGate.BlocksGameplayShortcuts)
         {
             return;
         }
 
         if (IsRestartShortcutPressed())
         {
-            Debug.Log("Restart Triggered");
             RestartGame();
             return;
         }
 
         if (!WasEscapePressedThisFrame())
+        {
+            return;
+        }
+
+        if (IsAnyGamePanelOpen())
         {
             return;
         }
@@ -61,7 +68,7 @@ public class GameResetManager : MonoBehaviour
             return;
         }
 
-        Time.timeScale = _previousTimeScale > 0f ? _previousTimeScale : 1f;
+        Time.timeScale = _previousTimeScale;
     }
 
     void CloseMenu()
@@ -72,7 +79,7 @@ public class GameResetManager : MonoBehaviour
         }
 
         _menuOpen = false;
-        Time.timeScale = _previousTimeScale > 0f ? _previousTimeScale : 1f;
+        Time.timeScale = _previousTimeScale;
     }
 
     public void RestartGame()
@@ -84,7 +91,7 @@ public class GameResetManager : MonoBehaviour
 
         _isRestarting = true;
         _menuOpen = false;
-        Debug.Log("GameResetManager: Restart Game — clearing all PlayerPrefs and reloading scene.");
+        Debug.Log("GameResetManager: restarting game and clearing saved demo state.");
 
         Time.timeScale = 1f;
         ResetSessionState();
@@ -157,7 +164,7 @@ public class GameResetManager : MonoBehaviour
         float y = (Screen.height - height) * 0.5f;
 
         GUI.Box(new Rect(x, y, width, height), GUIContent.none, _panelStyle);
-        GUI.Label(new Rect(x, y + 16f, width, 32f), "菜单", _titleStyle);
+        GUI.Label(new Rect(x, y + 16f, width, 32f), "Menu", _titleStyle);
 
         float buttonWidth = width - 48f;
         float buttonX = x + 24f;
@@ -168,12 +175,21 @@ public class GameResetManager : MonoBehaviour
             return;
         }
 
-        if (GUI.Button(new Rect(buttonX, y + 116f, buttonWidth, 40f), "继续游戏", _buttonStyle))
+        if (GUI.Button(new Rect(buttonX, y + 116f, buttonWidth, 40f), "Continue", _buttonStyle))
         {
             CloseMenu();
         }
 
-        GUI.Label(new Rect(x, y + height - 30f, width, 22f), "Ctrl+R 重启 · ESC 关闭", _hintStyle);
+        GUI.Label(new Rect(x, y + height - 30f, width, 22f), "Ctrl+R restart / ESC close", _hintStyle);
+    }
+
+    static bool IsAnyGamePanelOpen()
+    {
+        return TabMenuUI.IsOpen
+            || MapPanelUI.IsOpen
+            || InventoryPanelUI.IsOpen
+            || AgentUI.IsOpen
+            || (CivilizationSeedRulePanel.Instance != null && CivilizationSeedRulePanel.Instance.IsOpen);
     }
 
     static bool WasEscapePressedThisFrame()
@@ -265,4 +281,3 @@ public class GameResetManager : MonoBehaviour
         return texture;
     }
 }
-

@@ -314,17 +314,35 @@ public class CivilizationSeedRulePanel : MonoBehaviour
 
     static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<EventSystem>() != null)
+        EventSystem eventSystem = FindFirstObjectByType<EventSystem>();
+        if (eventSystem == null)
         {
-            return;
+            GameObject eventSystemObject = new GameObject("EventSystem");
+            eventSystem = eventSystemObject.AddComponent<EventSystem>();
         }
 
-        GameObject eventSystem = new GameObject("EventSystem");
-        eventSystem.AddComponent<EventSystem>();
 #if ENABLE_INPUT_SYSTEM
-        eventSystem.AddComponent<InputSystemUIInputModule>();
+        InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+        if (inputModule == null)
+        {
+            inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+        }
+
+        if (inputModule.actionsAsset == null)
+        {
+            inputModule.AssignDefaultActions();
+        }
+
+        StandaloneInputModule legacyModule = eventSystem.GetComponent<StandaloneInputModule>();
+        if (legacyModule != null)
+        {
+            legacyModule.enabled = false;
+        }
 #else
-        eventSystem.AddComponent<StandaloneInputModule>();
+        if (eventSystem.GetComponent<StandaloneInputModule>() == null)
+        {
+            eventSystem.gameObject.AddComponent<StandaloneInputModule>();
+        }
 #endif
     }
 }

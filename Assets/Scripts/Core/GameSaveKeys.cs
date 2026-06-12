@@ -10,9 +10,14 @@ public static class GameSaveKeys
     public const string MoonBalance = "moon_balance";
     public const string RedDaoSteleClaimed = "red_dao_stele_claimed";
 
-    // ReputationManager (session REP value is not persisted; claim flags are)
+    // ReputationManager
+    public const string ReputationBalance = "reputation_balance";
     public const string BlueDaoReputationClaimed = "blue_dao_reputation_claimed";
     public const string RedDaoDonationClaimed = "red_dao_donation_claimed";
+
+    // Civilization choice
+    public const string SelectedCivilizationType = "selected_civilization_type";
+    public const string SelectedJoinRule = "selected_join_rule";
 
     // DAOPassManager
     public const string DaoPassPrefix = "dao_pass_";
@@ -35,15 +40,18 @@ public static class GameSaveKeys
     public const string DaoIntroGreenSeen = "dao_intro_green_seen";
 
     /// <summary>
-    /// Session-only (not PlayerPrefs): QuestSignals, CivilizationManager, MainQuestManager step.
+    /// Session-only (not PlayerPrefs): QuestSignals, MainQuestManager step.
     /// Cleared in GameResetManager.ResetSessionState() before scene reload.
     /// </summary>
     public static readonly string[] AllPlayerPrefsKeys =
     {
         MoonBalance,
         RedDaoSteleClaimed,
+        ReputationBalance,
         BlueDaoReputationClaimed,
         RedDaoDonationClaimed,
+        SelectedCivilizationType,
+        SelectedJoinRule,
         GreenPass,
         MoonCrystal01,
         MoonCrystal02,

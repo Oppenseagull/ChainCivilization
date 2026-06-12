@@ -45,6 +45,7 @@ public class MoonCrystalInteract : MonoBehaviour
             return;
         }
 
+        LandmarkVisualFactory.ApplyMoonCrystal(gameObject);
         VisualHierarchy.Apply(
             gameObject,
             VisualHierarchyTier.Interactive,
@@ -68,6 +69,11 @@ public class MoonCrystalInteract : MonoBehaviour
         UpdateRangeState(inRange);
 
         if (!_playerNear || IsCollected())
+        {
+            return;
+        }
+
+        if (GameplayInputGate.BlocksGameplayShortcuts)
         {
             return;
         }

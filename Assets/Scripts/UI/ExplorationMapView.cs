@@ -24,9 +24,16 @@ public class ExplorationMapView
     {
         public RectTransform MapArea;
         public RectTransform PlayerDotRoot;
+        public RectTransform PlayerHeadingRoot;
         public Image PlayerGlow;
         public Image PlayerCore;
+        public Image PlayerHeadingArrow;
         public LandmarkWidget[] Landmarks;
+        public bool Compact;
+        public bool HasLastPlayerMapPosition;
+        public bool HasLastMoveMapDirection;
+        public Vector2 LastPlayerMapPosition;
+        public Vector2 LastMoveMapDirection;
     }
 
     public sealed class LandmarkWidget
@@ -42,6 +49,7 @@ public class ExplorationMapView
         new Landmark { Label = "出生地", WorldXZ = new Vector2(0f, 0f), QuestStepIndex = -1 },
         new Landmark { Label = "Blue DAO", WorldXZ = new Vector2(-200f, -200f), QuestStepIndex = 0 },
         new Landmark { Label = "Red DAO", WorldXZ = new Vector2(200f, 200f), QuestStepIndex = 1 },
+        new Landmark { Label = "Moon Crystal", WorldXZ = new Vector2(200f, 25f), QuestStepIndex = 2 },
         new Landmark { Label = "Green DAO", WorldXZ = new Vector2(280f, -280f), QuestStepIndex = 4 },
         new Landmark { Label = "Boundary Stone", WorldXZ = new Vector2(420f, -420f), QuestStepIndex = 5 },
         new Landmark { Label = "Civilization Seed", WorldXZ = new Vector2(400f, -400f), QuestStepIndex = 6 }
@@ -57,8 +65,9 @@ public class ExplorationMapView
     static Font _font;
     static Texture2D _circleTexture;
     static Texture2D _glowTexture;
+    static Texture2D _headingTexture;
 
-    public static MapWidget Build(Transform parent, float width, float height)
+    public static MapWidget Build(Transform parent, float width, float height, bool compact = false)
     {
         EnsureResources();
 
@@ -73,18 +82,30 @@ public class ExplorationMapView
         layout.preferredHeight = height;
 
         GameObject mapAreaObject = CreateUiObject("MapArea", root.transform);
-        MapWidget widget = new MapWidget();
+        MapWidget widget = new MapWidget
+        {
+            Compact = compact
+        };
         widget.MapArea = mapAreaObject.GetComponent<RectTransform>();
         StretchFull(widget.MapArea);
 
         Image mapBackground = mapAreaObject.AddComponent<Image>();
-        mapBackground.color = MapBackground;
+        mapBackground.color = compact
+            ? new Color(MapBackground.r, MapBackground.g, MapBackground.b, 0.62f)
+            : MapBackground;
 
         Vector2 mapSize = new Vector2(width, height);
-        CreateLandMass(widget.MapArea);
-        CreateRoutePaths(widget.MapArea, mapSize);
-        widget.Landmarks = CreateLandmarks(widget.MapArea, mapSize);
-        CreatePlayerDot(widget.MapArea, out widget.PlayerDotRoot, out widget.PlayerGlow, out widget.PlayerCore);
+        CreateLandMass(widget.MapArea, mapSize, compact);
+        CreateRoutePaths(widget.MapArea, mapSize, compact);
+        widget.Landmarks = CreateLandmarks(widget.MapArea, mapSize, compact);
+        CreatePlayerDot(
+            widget.MapArea,
+            compact,
+            out widget.PlayerDotRoot,
+            out widget.PlayerHeadingRoot,
+            out widget.PlayerGlow,
+            out widget.PlayerCore,
+            out widget.PlayerHeadingArrow);
         mapAreaObject.AddComponent<ExplorationMapPulse>();
 
         return widget;
@@ -112,14 +133,55 @@ public class ExplorationMapView
                 mapSize = widget.MapArea.sizeDelta;
             }
 
-            Vector2 mapPos = WorldToMapLocal(player.position.x, player.position.z, mapSize);
+            Vector2 mapPos = WorldToMapLocal(player.position.x, player.position.z, mapSize, widget.Compact);
             widget.PlayerDotRoot.anchoredPosition = mapPos;
+            UpdatePlayerHeading(widget, player, mapPos);
             widget.PlayerDotRoot.gameObject.SetActive(true);
         }
         else
         {
             widget.PlayerDotRoot.gameObject.SetActive(false);
+            widget.HasLastPlayerMapPosition = false;
+            widget.HasLastMoveMapDirection = false;
         }
+    }
+
+    static void UpdatePlayerHeading(MapWidget widget, Transform player, Vector2 currentMapPosition)
+    {
+        if (widget.PlayerHeadingRoot == null)
+        {
+            return;
+        }
+
+        Vector2 mapDirection = Vector2.zero;
+        if (widget.HasLastPlayerMapPosition)
+        {
+            Vector2 movementDelta = currentMapPosition - widget.LastPlayerMapPosition;
+            if (movementDelta.sqrMagnitude > 0.0001f)
+            {
+                widget.LastMoveMapDirection = movementDelta.normalized;
+                widget.HasLastMoveMapDirection = true;
+            }
+        }
+
+        widget.LastPlayerMapPosition = currentMapPosition;
+        widget.HasLastPlayerMapPosition = true;
+
+        Vector3 forward = player.forward;
+        mapDirection = new Vector2(forward.x, forward.z);
+        if (mapDirection.sqrMagnitude < 0.0001f && widget.HasLastMoveMapDirection)
+        {
+            mapDirection = widget.LastMoveMapDirection;
+        }
+
+        if (mapDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        mapDirection.Normalize();
+        float angle = Vector2.SignedAngle(Vector2.up, mapDirection);
+        widget.PlayerHeadingRoot.localRotation = Quaternion.Euler(0f, 0f, angle);
     }
 
     static LandmarkState[] BuildLandmarkStates(MainQuestManager questManager)
@@ -194,19 +256,24 @@ public class ExplorationMapView
 
         landmark.Marker.color = markerColor;
         landmark.Ring.color = ringColor;
-        landmark.Label.color = labelColor;
-        landmark.Label.fontStyle = state == LandmarkState.Current ? FontStyle.Bold : FontStyle.Normal;
+        if (landmark.Label != null)
+        {
+            landmark.Label.color = labelColor;
+            landmark.Label.fontStyle = state == LandmarkState.Current ? FontStyle.Bold : FontStyle.Normal;
+        }
     }
 
-    static void CreateLandMass(RectTransform mapArea)
+    static void CreateLandMass(RectTransform mapArea, Vector2 mapSize, bool compact)
     {
         GameObject land = CreateUiObject("LandMass", mapArea);
         RectTransform landRect = land.GetComponent<RectTransform>();
         landRect.anchorMin = new Vector2(0.5f, 0.5f);
         landRect.anchorMax = new Vector2(0.5f, 0.5f);
         landRect.pivot = new Vector2(0.5f, 0.5f);
-        landRect.sizeDelta = new Vector2(560f, 420f);
-        landRect.anchoredPosition = new Vector2(10f, -8f);
+        landRect.sizeDelta = compact
+            ? new Vector2(Mathf.Max(80f, mapSize.x - 40f), Mathf.Max(60f, mapSize.y - 30f))
+            : new Vector2(560f, 420f);
+        landRect.anchoredPosition = compact ? Vector2.zero : new Vector2(10f, -8f);
 
         Image landImage = land.AddComponent<Image>();
         landImage.color = LandFill;
@@ -225,17 +292,17 @@ public class ExplorationMapView
         borderImage.type = Image.Type.Sliced;
     }
 
-    static void CreateRoutePaths(RectTransform mapArea, Vector2 mapSize)
+    static void CreateRoutePaths(RectTransform mapArea, Vector2 mapSize, bool compact)
     {
         for (int i = 0; i < Landmarks.Length - 1; i++)
         {
-            Vector2 from = WorldToMapLocal(Landmarks[i].WorldXZ.x, Landmarks[i].WorldXZ.y, mapSize);
-            Vector2 to = WorldToMapLocal(Landmarks[i + 1].WorldXZ.x, Landmarks[i + 1].WorldXZ.y, mapSize);
-            CreatePathSegment(mapArea, from, to);
+            Vector2 from = WorldToMapLocal(Landmarks[i].WorldXZ.x, Landmarks[i].WorldXZ.y, mapSize, compact);
+            Vector2 to = WorldToMapLocal(Landmarks[i + 1].WorldXZ.x, Landmarks[i + 1].WorldXZ.y, mapSize, compact);
+            CreatePathSegment(mapArea, from, to, compact);
         }
     }
 
-    static void CreatePathSegment(RectTransform parent, Vector2 from, Vector2 to)
+    static void CreatePathSegment(RectTransform parent, Vector2 from, Vector2 to, bool compact)
     {
         Vector2 delta = to - from;
         float length = delta.magnitude;
@@ -251,7 +318,7 @@ public class ExplorationMapView
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0f, 0.5f);
-        rect.sizeDelta = new Vector2(length, 3f);
+        rect.sizeDelta = new Vector2(length, compact ? 2f : 3f);
         rect.anchoredPosition = from;
         rect.localRotation = Quaternion.Euler(0f, 0f, angle);
 
@@ -259,21 +326,21 @@ public class ExplorationMapView
         image.color = PathColor;
     }
 
-    static LandmarkWidget[] CreateLandmarks(RectTransform mapArea, Vector2 mapSize)
+    static LandmarkWidget[] CreateLandmarks(RectTransform mapArea, Vector2 mapSize, bool compact)
     {
         LandmarkWidget[] widgets = new LandmarkWidget[Landmarks.Length];
 
         for (int i = 0; i < Landmarks.Length; i++)
         {
             Landmark landmark = Landmarks[i];
-            Vector2 mapPos = WorldToMapLocal(landmark.WorldXZ.x, landmark.WorldXZ.y, mapSize);
+            Vector2 mapPos = WorldToMapLocal(landmark.WorldXZ.x, landmark.WorldXZ.y, mapSize, compact);
 
             GameObject markerRoot = CreateUiObject($"Landmark_{landmark.Label}", mapArea);
             RectTransform markerRect = markerRoot.GetComponent<RectTransform>();
             markerRect.anchorMin = new Vector2(0.5f, 0.5f);
             markerRect.anchorMax = new Vector2(0.5f, 0.5f);
             markerRect.pivot = new Vector2(0.5f, 0.5f);
-            markerRect.sizeDelta = new Vector2(120f, 56f);
+            markerRect.sizeDelta = compact ? new Vector2(36f, 36f) : new Vector2(120f, 56f);
             markerRect.anchoredPosition = mapPos;
 
             GameObject ringObject = CreateUiObject("Ring", markerRoot.transform);
@@ -281,8 +348,8 @@ public class ExplorationMapView
             ringRect.anchorMin = new Vector2(0.5f, 1f);
             ringRect.anchorMax = new Vector2(0.5f, 1f);
             ringRect.pivot = new Vector2(0.5f, 0.5f);
-            ringRect.sizeDelta = new Vector2(18f, 18f);
-            ringRect.anchoredPosition = new Vector2(0f, -10f);
+            ringRect.sizeDelta = compact ? new Vector2(14f, 14f) : new Vector2(18f, 18f);
+            ringRect.anchoredPosition = compact ? Vector2.zero : new Vector2(0f, -10f);
             Image ring = ringObject.AddComponent<Image>();
             ring.sprite = CreateCircleSprite();
             ring.type = Image.Type.Simple;
@@ -292,27 +359,31 @@ public class ExplorationMapView
             dotRect.anchorMin = ringRect.anchorMin;
             dotRect.anchorMax = ringRect.anchorMax;
             dotRect.pivot = ringRect.pivot;
-            dotRect.sizeDelta = new Vector2(10f, 10f);
+            dotRect.sizeDelta = compact ? new Vector2(8f, 8f) : new Vector2(10f, 10f);
             dotRect.anchoredPosition = ringRect.anchoredPosition;
             Image dot = dotObject.AddComponent<Image>();
             dot.sprite = CreateCircleSprite();
             dot.type = Image.Type.Simple;
 
-            GameObject labelObject = CreateUiObject("Label", markerRoot.transform);
-            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-            labelRect.anchorMin = new Vector2(0.5f, 0f);
-            labelRect.anchorMax = new Vector2(0.5f, 0f);
-            labelRect.pivot = new Vector2(0.5f, 1f);
-            labelRect.sizeDelta = new Vector2(120f, 34f);
-            labelRect.anchoredPosition = new Vector2(0f, 0f);
+            Text label = null;
+            if (!compact)
+            {
+                GameObject labelObject = CreateUiObject("Label", markerRoot.transform);
+                RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+                labelRect.anchorMin = new Vector2(0.5f, 0f);
+                labelRect.anchorMax = new Vector2(0.5f, 0f);
+                labelRect.pivot = new Vector2(0.5f, 1f);
+                labelRect.sizeDelta = new Vector2(120f, 34f);
+                labelRect.anchoredPosition = new Vector2(0f, 0f);
 
-            Text label = labelObject.AddComponent<Text>();
-            label.text = landmark.Label;
-            label.font = _font;
-            label.fontSize = 13;
-            label.alignment = TextAnchor.UpperCenter;
-            label.horizontalOverflow = HorizontalWrapMode.Wrap;
-            label.verticalOverflow = VerticalWrapMode.Overflow;
+                label = labelObject.AddComponent<Text>();
+                label.text = landmark.Label;
+                label.font = _font;
+                label.fontSize = 13;
+                label.alignment = TextAnchor.UpperCenter;
+                label.horizontalOverflow = HorizontalWrapMode.Wrap;
+                label.verticalOverflow = VerticalWrapMode.Overflow;
+            }
 
             widgets[i] = new LandmarkWidget
             {
@@ -326,26 +397,42 @@ public class ExplorationMapView
         return widgets;
     }
 
-    static void CreatePlayerDot(RectTransform mapArea, out RectTransform root, out Image glow, out Image core)
+    static void CreatePlayerDot(
+        RectTransform mapArea,
+        bool compact,
+        out RectTransform root,
+        out RectTransform headingRoot,
+        out Image glow,
+        out Image core,
+        out Image headingArrow)
     {
         GameObject playerRoot = CreateUiObject("PlayerDot", mapArea);
         root = playerRoot.GetComponent<RectTransform>();
         root.anchorMin = new Vector2(0.5f, 0.5f);
         root.anchorMax = new Vector2(0.5f, 0.5f);
         root.pivot = new Vector2(0.5f, 0.5f);
-        root.sizeDelta = new Vector2(40f, 40f);
+        root.sizeDelta = compact ? new Vector2(28f, 28f) : new Vector2(40f, 40f);
 
         GameObject glowObject = CreateUiObject("Glow", playerRoot.transform);
         RectTransform glowRect = glowObject.GetComponent<RectTransform>();
-        StretchCenter(glowRect, 34f);
+        StretchCenter(glowRect, compact ? 24f : 34f);
         glow = glowObject.AddComponent<Image>();
         glow.sprite = CreateGlowSprite();
         glow.type = Image.Type.Simple;
         glow.color = new Color(0.55f, 0.88f, 1f, 0.75f);
 
+        GameObject headingObject = CreateUiObject("Heading", playerRoot.transform);
+        headingRoot = headingObject.GetComponent<RectTransform>();
+        StretchCenter(headingRoot, compact ? 24f : 32f);
+
+        headingArrow = headingObject.AddComponent<Image>();
+        headingArrow.sprite = CreateHeadingSprite();
+        headingArrow.type = Image.Type.Simple;
+        headingArrow.color = new Color(1f, 0.92f, 0.42f, 0.95f);
+
         GameObject coreObject = CreateUiObject("Core", playerRoot.transform);
         RectTransform coreRect = coreObject.GetComponent<RectTransform>();
-        StretchCenter(coreRect, 12f);
+        StretchCenter(coreRect, compact ? 9f : 12f);
         core = coreObject.AddComponent<Image>();
         core.sprite = CreateCircleSprite();
         core.type = Image.Type.Simple;
@@ -354,9 +441,9 @@ public class ExplorationMapView
         playerRoot.transform.SetAsLastSibling();
     }
 
-    static Vector2 WorldToMapLocal(float worldX, float worldZ, Vector2 mapSize)
+    static Vector2 WorldToMapLocal(float worldX, float worldZ, Vector2 mapSize, bool compact = false)
     {
-        const float padding = 36f;
+        float padding = compact ? 18f : 36f;
         float drawWidth = mapSize.x - padding * 2f;
         float drawHeight = mapSize.y - padding * 2f;
 
@@ -364,7 +451,7 @@ public class ExplorationMapView
         float normalizedZ = Mathf.InverseLerp(WorldMin.y, WorldMax.y, worldZ);
 
         float x = -drawWidth * 0.5f + normalizedX * drawWidth;
-        float y = -drawHeight * 0.5f + (1f - normalizedZ) * drawHeight;
+        float y = -drawHeight * 0.5f + normalizedZ * drawHeight;
         return new Vector2(x, y);
     }
 
@@ -401,6 +488,16 @@ public class ExplorationMapView
         return Sprite.Create(_glowTexture, new Rect(0f, 0f, 48f, 48f), new Vector2(0.5f, 0.5f), 48f);
     }
 
+    static Sprite CreateHeadingSprite()
+    {
+        if (_headingTexture == null)
+        {
+            _headingTexture = CreateHeadingTexture(32, 40);
+        }
+
+        return Sprite.Create(_headingTexture, new Rect(0f, 0f, 32f, 40f), new Vector2(0.5f, 0.5f), 40f);
+    }
+
     static Texture2D CreateSolidTexture(int width, int height, Color color)
     {
         Texture2D texture = new Texture2D(width, height);
@@ -411,6 +508,30 @@ public class ExplorationMapView
         }
 
         texture.SetPixels(pixels);
+        texture.Apply();
+        return texture;
+    }
+
+    static Texture2D CreateHeadingTexture(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Vector2 center = new Vector2((width - 1) * 0.5f, 0f);
+
+        for (int y = 0; y < height; y++)
+        {
+            float normalizedY = y / (float)(height - 1);
+            float halfWidth = Mathf.Lerp(width * 0.36f, 0.8f, normalizedY);
+            bool inVerticalRange = normalizedY >= 0.12f;
+
+            for (int x = 0; x < width; x++)
+            {
+                float distanceFromCenter = Mathf.Abs(x - center.x);
+                bool inside = inVerticalRange && distanceFromCenter <= halfWidth;
+                float edgeFade = inside ? Mathf.Clamp01((halfWidth - distanceFromCenter) + 0.5f) : 0f;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, edgeFade));
+            }
+        }
+
         texture.Apply();
         return texture;
     }

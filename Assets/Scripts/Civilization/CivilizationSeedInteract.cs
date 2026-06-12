@@ -28,6 +28,7 @@ public class CivilizationSeedInteract : MonoBehaviour
     void Start()
     {
         SnapSeedToGround();
+        LandmarkVisualFactory.ApplyCivilizationSeed(gameObject);
         VisualHierarchy.Apply(gameObject, VisualHierarchyTier.CivilizationSeed, VisualHierarchyOptions.ForCivilizationSeed());
 
         _rulePanel = GetComponent<CivilizationSeedRulePanel>();
@@ -55,6 +56,14 @@ public class CivilizationSeedInteract : MonoBehaviour
 
     void Update()
     {
+        if (!QuestSignals.BoundaryLoreComplete)
+        {
+            SetRenderersEnabled(false);
+            return;
+        }
+
+        SetRenderersEnabled(true);
+
         if (_player == null || _hasSelectedRule)
         {
             return;
@@ -62,6 +71,11 @@ public class CivilizationSeedInteract : MonoBehaviour
 
         _playerNear = Vector3.Distance(_player.position, transform.position) <= interactRadius;
         if (!_playerNear || (_rulePanel != null && _rulePanel.IsOpen))
+        {
+            return;
+        }
+
+        if (GameplayInputGate.BlocksGameplayShortcuts)
         {
             return;
         }
@@ -145,6 +159,18 @@ public class CivilizationSeedInteract : MonoBehaviour
         GUI.Box(new Rect(x - 20f, y - 18f, width + 40f, height), GUIContent.none, _panelStyle);
         GUI.Label(new Rect(x, y, width, 40f), titleMessage, _titleStyle);
         GUI.Label(new Rect(x, y + 44f, width, 28f), interactHint, _hintStyle);
+    }
+
+    void SetRenderersEnabled(bool isEnabled)
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer r in renderers)
+        {
+            if (r.enabled != isEnabled)
+            {
+                r.enabled = isEnabled;
+            }
+        }
     }
 
     void EnsureStyles()

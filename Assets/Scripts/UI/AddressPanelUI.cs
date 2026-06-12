@@ -21,13 +21,18 @@ public class AddressPanelUI : MonoBehaviour
 
     void Update()
     {
-        if (TabMenuUI.Instance != null)
+        if (TabMenuUI.IsOpen)
         {
             if (_isOpen)
             {
                 Close();
             }
 
+            return;
+        }
+
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
             return;
         }
 

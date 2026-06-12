@@ -4,34 +4,33 @@ using UnityEngine.InputSystem;
 #endif
 
 /// <summary>
-/// Blue DAO central stele: show welcome text when player is near, reveal lore on E.
-/// Uses OnGUI for minimal setup (no Canvas prefab required).
+/// Blue DAO central stele: shows intro lore and grants first reputation reward.
 /// </summary>
 public class BlueDAOSteleInteract : MonoBehaviour
 {
     [SerializeField] float interactRadius = 14f;
-    [SerializeField] string welcomeMessage = "欢迎来到 Blue DAO";
-    [SerializeField] string interactMessage = "这里信仰开放协作";
+    [SerializeField] string welcomeMessage = "Welcome to Blue DAO";
+    [SerializeField] string interactMessage = "This DAO values open collaboration.";
     [SerializeField] int reputationReward = 10;
-    [SerializeField] string reputationMessageLine1 = "你帮助了开放协作文明。";
+    [SerializeField] string reputationMessageLine1 = "You helped an open collaboration civilization.";
     [SerializeField] string reputationMessageLine2 = "Reputation +10";
-
-    const string DebugTag = "BlueDAO";
 
     Transform _player;
     bool _playerNear;
-    bool _wasPlayerNear;
-    bool _wasShowingIntro;
-    bool _revealed;
     bool _showingIntro;
 
     void Start()
     {
-        Debug.Log("[DAO DEBUG] Start OK " + DebugTag);
-
         GroundSnapUtility.SnapTransform(transform, 0f);
+        LandmarkVisualFactory.ApplyDaoSanctuary(
+            gameObject,
+            "BlueDAO",
+            new Color(0.42f, 0.72f, 1f),
+            new Color(0.72f, 0.8f, 0.88f));
         VisualHierarchyOptions options = VisualHierarchyOptions.ForInteractive("BLUE DAO", new Color(0.62f, 0.84f, 1f));
         options.EnableFloat = false;
+        options.EnableParticles = false;
+        options.EnableGlowRing = false;
         options.LabelHeight = 5.5f;
         VisualHierarchy.Apply(gameObject, VisualHierarchyTier.Interactive, options);
 
@@ -39,15 +38,6 @@ public class BlueDAOSteleInteract : MonoBehaviour
         if (player != null)
         {
             _player = player.transform;
-        }
-
-        if (_player == null)
-        {
-            Debug.LogError("[DAO DEBUG] Player NULL " + DebugTag);
-        }
-        else
-        {
-            Debug.Log("[DAO DEBUG] Player Found: " + _player.name + " " + DebugTag);
         }
     }
 
@@ -58,26 +48,10 @@ public class BlueDAOSteleInteract : MonoBehaviour
             return;
         }
 
-        float distance = Vector3.Distance(_player.position, transform.position);
-        _playerNear = distance <= interactRadius;
-
-        if (_playerNear != _wasPlayerNear)
-        {
-            Debug.Log(_playerNear ? "[DAO DEBUG] Near=True " + DebugTag : "[DAO DEBUG] Near=False " + DebugTag);
-        }
-
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"[DAO DEBUG] {DebugTag} PlayerPos={_player.position} DaoPos={transform.position} Distance={distance:F1} Radius={interactRadius}");
-        }
-
-        _wasPlayerNear = _playerNear;
-
+        _playerNear = Vector3.Distance(_player.position, transform.position) <= interactRadius;
         if (!_playerNear)
         {
-            _revealed = false;
             _showingIntro = false;
-            _wasShowingIntro = false;
             HUDPromptChannel.Clear(this);
             return;
         }
@@ -87,36 +61,25 @@ public class BlueDAOSteleInteract : MonoBehaviour
             _showingIntro = true;
         }
 
-        if (_showingIntro && !_wasShowingIntro)
-        {
-            Debug.Log("[DAO DEBUG] Intro Active " + DebugTag);
-        }
-
-        _wasShowingIntro = _showingIntro;
-
         if (_showingIntro)
         {
-            if (WasEPressedThisFrame())
-            {
-                Debug.Log("[DAO DEBUG] E Pressed " + DebugTag);
-                Debug.Log("[DAO DEBUG] E Consumed By Intro " + DebugTag);
-            }
-
             DAOIntroCard.TryDismissOnInteract(DAOIntroCard.Kind.Blue, ref _showingIntro);
             return;
         }
 
         if (WasEPressedThisFrame())
         {
-            Debug.Log("[DAO DEBUG] E Pressed " + DebugTag);
-            Debug.Log("[DAO DEBUG] HandleInteract " + DebugTag);
             HandleInteract();
         }
     }
 
-
     static bool WasEPressedThisFrame()
     {
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return false;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
 #else
@@ -141,15 +104,14 @@ public class BlueDAOSteleInteract : MonoBehaviour
         ReputationManager reputation = ReputationManager.Instance;
         bool claimed = reputation != null && reputation.HasClaimedBlueDaoReputation;
         string line2 = claimed
-            ? "信誉奖励已领取\n开放协作理念仍然欢迎你"
-            : "这里信仰开放协作\n按 E 获得信誉";
+            ? "Reputation reward claimed\nOpen collaboration still welcomes you"
+            : $"{interactMessage}\nPress E to gain Reputation";
         float priority = -Vector3.Distance(_player.position, transform.position);
         HUDPromptChannel.Set(this, welcomeMessage, line2, priority);
     }
 
     void HandleInteract()
     {
-        _revealed = true;
         QuestSignals.MarkBlueDaoVisited();
 
         ReputationManager reputation = ReputationManager.Instance;

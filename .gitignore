@@ -27,6 +27,8 @@ sysinfo.txt
 [Mm]emoryCaptures/
 [Rr]ecordings/
 [Aa]ssets/AssetStoreTools*
+[Aa]ssets/_Recovery.meta
+[Aa]ssets/_Recovery/
 
 # IDE/editor local state
 .vs/
@@ -40,6 +42,8 @@ Thumbs.db
 
 # Local tool configuration
 .cursor/mcp.json
+.env
+[Ll]ocal[Ss]ecrets/
 
 # Generated compile logs from local experiments
 compile_*.txt

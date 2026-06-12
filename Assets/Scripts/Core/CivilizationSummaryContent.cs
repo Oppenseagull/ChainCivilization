@@ -21,11 +21,11 @@ public static class CivilizationSummaryContent
                     ChoiceLabel = "Open DAO",
                     WorldEvaluation = new[]
                     {
-                        "这是一个开放文明。",
-                        "任何人都可以加入。"
+                        "This is an open civilization.",
+                        "Anyone can join and contribute."
                     },
-                    Advantage = "增长速度快。",
-                    Risk = "共识较弱。"
+                    Advantage = "Fast growth.",
+                    Risk = "Consensus may be fragile."
                 };
             case CivilizationType.TradeDAO:
                 return new SummaryData
@@ -33,11 +33,11 @@ public static class CivilizationSummaryContent
                     ChoiceLabel = "Trade DAO",
                     WorldEvaluation = new[]
                     {
-                        "这是一个市场文明。",
-                        "资源在旅者之间自由流通。"
+                        "This is a market civilization.",
+                        "Resources flow through free exchange."
                     },
-                    Advantage = "资源流通效率高。",
-                    Risk = "容易形成财富集中。"
+                    Advantage = "High resource efficiency.",
+                    Risk = "Wealth may concentrate."
                 };
             case CivilizationType.KnowledgeDAO:
                 return new SummaryData
@@ -45,11 +45,11 @@ public static class CivilizationSummaryContent
                     ChoiceLabel = "Builder DAO",
                     WorldEvaluation = new[]
                     {
-                        "这是一个建设文明。",
-                        "号召旅者共同建造家园。"
+                        "This is a builder civilization.",
+                        "Travelers gather to create shared knowledge."
                     },
-                    Advantage = "建设能力强。",
-                    Risk = "扩张速度慢。"
+                    Advantage = "Strong construction ability.",
+                    Risk = "Expansion may be slower."
                 };
             default:
                 return default;

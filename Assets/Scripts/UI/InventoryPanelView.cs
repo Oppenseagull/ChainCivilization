@@ -53,6 +53,7 @@ public static class InventoryPanelView
         rootLayout.minWidth = width;
         rootLayout.preferredWidth = width;
         rootLayout.flexibleWidth = 1f;
+        rootLayout.flexibleHeight = 1f;
 
         GameObject scrollObject = CreateUiObject("InventoryScroll", root.transform);
         RectTransform scrollRect = scrollObject.GetComponent<RectTransform>();
@@ -108,15 +109,24 @@ public static class InventoryPanelView
             return;
         }
 
-        ClearChildren(widget.Content);
-        List<ItemSection> sections = BuildSections();
-
-        for (int i = 0; i < sections.Count; i++)
+        try
         {
-            CreateSection(widget.Content, sections[i]);
-        }
+            ClearChildren(widget.Content);
+            List<ItemSection> sections = BuildSections();
+            Debug.Log($"[InventoryPanelView] Refresh triggered. Sections count: {sections.Count}");
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(widget.Content);
+            for (int i = 0; i < sections.Count; i++)
+            {
+                CreateSection(widget.Content, sections[i]);
+                Debug.Log($"[InventoryPanelView] Created section {i}: {sections[i].Title}");
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(widget.Content);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[InventoryPanelView] Critical UI Exception during Refresh: {ex}");
+        }
     }
 
     public static List<ItemSection> BuildSections()
@@ -264,9 +274,9 @@ public static class InventoryPanelView
         layout.preferredHeight = 28f;
 
         Text header = headerObject.AddComponent<Text>();
-        header.text = title;
+        header.text = title.ToUpperInvariant();
         header.font = _font;
-        header.fontSize = 18;
+        header.fontSize = 14;
         header.fontStyle = FontStyle.Bold;
         header.alignment = TextAnchor.MiddleLeft;
         header.color = SectionTitle;
@@ -276,8 +286,8 @@ public static class InventoryPanelView
     {
         GameObject card = CreateUiObject($"Card_{entry.Name}", parent);
         LayoutElement cardLayout = card.AddComponent<LayoutElement>();
-        cardLayout.minHeight = 92f;
-        cardLayout.preferredHeight = 92f;
+        cardLayout.minHeight = 125f;
+        cardLayout.preferredHeight = 125f;
 
         Image cardImage = card.AddComponent<Image>();
         cardImage.sprite = _cardSprite;
@@ -288,9 +298,9 @@ public static class InventoryPanelView
         row.padding = new RectOffset(14, 14, 12, 12);
         row.spacing = 14f;
         row.childAlignment = TextAnchor.MiddleLeft;
-        row.childControlWidth = false;
+        row.childControlWidth = true;
         row.childControlHeight = true;
-        row.childForceExpandWidth = false;
+        row.childForceExpandWidth = true;
         row.childForceExpandHeight = true;
 
         CreateIconBlock(card.transform, entry);
@@ -303,6 +313,8 @@ public static class InventoryPanelView
             StretchFull(borderRect);
             borderRect.offsetMin = new Vector2(1f, 1f);
             borderRect.offsetMax = new Vector2(-1f, -1f);
+            LayoutElement borderLayout = border.AddComponent<LayoutElement>();
+            borderLayout.ignoreLayout = true;
             Image borderImage = border.AddComponent<Image>();
             borderImage.sprite = _cardSprite;
             borderImage.type = Image.Type.Sliced;
@@ -315,10 +327,10 @@ public static class InventoryPanelView
     {
         GameObject iconRoot = CreateUiObject("Icon", parent);
         LayoutElement iconLayout = iconRoot.AddComponent<LayoutElement>();
-        iconLayout.minWidth = 64f;
-        iconLayout.preferredWidth = 64f;
-        iconLayout.minHeight = 64f;
-        iconLayout.preferredHeight = 64f;
+        iconLayout.minWidth = 56f;
+        iconLayout.preferredWidth = 56f;
+        iconLayout.minHeight = 56f;
+        iconLayout.preferredHeight = 56f;
 
         Image iconBackground = iconRoot.AddComponent<Image>();
         iconBackground.sprite = _iconSprite;
@@ -330,7 +342,7 @@ public static class InventoryPanelView
         innerRect.anchorMin = new Vector2(0.5f, 0.5f);
         innerRect.anchorMax = new Vector2(0.5f, 0.5f);
         innerRect.pivot = new Vector2(0.5f, 0.5f);
-        innerRect.sizeDelta = new Vector2(46f, 46f);
+        innerRect.sizeDelta = new Vector2(40f, 40f);
         innerRect.anchoredPosition = Vector2.zero;
 
         Image innerImage = iconInner.AddComponent<Image>();
@@ -343,7 +355,7 @@ public static class InventoryPanelView
         Text symbol = symbolObject.AddComponent<Text>();
         symbol.text = GetIconSymbol(entry.Name);
         symbol.font = _font;
-        symbol.fontSize = entry.Name == "MOON" ? 22 : 18;
+        symbol.fontSize = entry.Name == "MOON" ? 20 : 16;
         symbol.fontStyle = FontStyle.Bold;
         symbol.alignment = TextAnchor.MiddleCenter;
         symbol.color = new Color(0.12f, 0.16f, 0.2f, 0.85f);
@@ -357,7 +369,7 @@ public static class InventoryPanelView
         textLayout.minWidth = 220f;
 
         VerticalLayoutGroup column = textRoot.AddComponent<VerticalLayoutGroup>();
-        column.spacing = 4f;
+        column.spacing = 6f;
         column.childAlignment = TextAnchor.UpperLeft;
         column.childControlWidth = true;
         column.childControlHeight = true;
@@ -366,8 +378,8 @@ public static class InventoryPanelView
 
         GameObject titleRow = CreateUiObject("TitleRow", textRoot.transform);
         LayoutElement titleRowLayout = titleRow.AddComponent<LayoutElement>();
-        titleRowLayout.minHeight = 24f;
-        titleRowLayout.preferredHeight = 24f;
+        titleRowLayout.minHeight = 28f;
+        titleRowLayout.preferredHeight = 28f;
 
         HorizontalLayoutGroup titleGroup = titleRow.AddComponent<HorizontalLayoutGroup>();
         titleGroup.spacing = 8f;
@@ -383,7 +395,7 @@ public static class InventoryPanelView
         Text title = titleObject.AddComponent<Text>();
         title.text = entry.Name;
         title.font = _font;
-        title.fontSize = 18;
+        title.fontSize = 16;
         title.fontStyle = FontStyle.Bold;
         title.alignment = TextAnchor.MiddleLeft;
         title.color = entry.IsPlaceholder ? PlaceholderText : TitleText;
@@ -397,7 +409,7 @@ public static class InventoryPanelView
             Text count = countObject.AddComponent<Text>();
             count.text = entry.CountLabel;
             count.font = _font;
-            count.fontSize = 16;
+            count.fontSize = 15;
             count.fontStyle = FontStyle.Bold;
             count.alignment = TextAnchor.MiddleRight;
             count.color = new Color(0.28f, 0.52f, 0.68f);
@@ -405,19 +417,20 @@ public static class InventoryPanelView
 
         GameObject descObject = CreateUiObject("Description", textRoot.transform);
         LayoutElement descLayout = descObject.AddComponent<LayoutElement>();
-        descLayout.minHeight = 40f;
-        descLayout.preferredHeight = 40f;
+        descLayout.minHeight = 36f;
+        descLayout.preferredHeight = 42f;
         descLayout.flexibleHeight = 1f;
 
         Text description = descObject.AddComponent<Text>();
         description.text = entry.Description;
         description.font = _font;
-        description.fontSize = 14;
-        description.fontStyle = FontStyle.Italic;
+        description.fontSize = 13;
+        description.fontStyle = FontStyle.Normal;
         description.alignment = TextAnchor.UpperLeft;
         description.color = entry.IsPlaceholder ? PlaceholderText : BodyText;
         description.horizontalOverflow = HorizontalWrapMode.Wrap;
         description.verticalOverflow = VerticalWrapMode.Overflow;
+        description.lineSpacing = 1.1f;
     }
 
     static string GetIconSymbol(string itemName)

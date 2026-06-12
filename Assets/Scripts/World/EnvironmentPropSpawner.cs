@@ -44,6 +44,12 @@ public class EnvironmentPropSpawner : MonoBehaviour
     [SerializeField] int energyTowerCount = 10;
     [SerializeField] int randomRockCount = 12;
 
+    [Header("Low Poly Overrides")]
+    public GameObject lowPolyRockPrefab;
+    public GameObject lowPolyTreePrefab;
+    public GameObject lowPolyRuinPrefab;
+    public GameObject lowPolyTowerPrefab;
+
     [Header("World Bounds (XZ)")]
     [SerializeField] Vector2 worldMin = new Vector2(-210f, -420f);
     [SerializeField] Vector2 worldMax = new Vector2(430f, 210f);
@@ -205,6 +211,28 @@ public class EnvironmentPropSpawner : MonoBehaviour
 
     GameObject BuildProp(PropKind kind, Vector3 world, float yaw, int index)
     {
+        bool useLowPoly = lowPolyRockPrefab != null;
+
+        if (useLowPoly)
+        {
+            switch (kind)
+            {
+                case PropKind.CivilizationRuin:
+                case PropKind.AncientRuin:
+                    return lowPolyRuinPrefab ? InstantiateOverride(lowPolyRuinPrefab, $"Env_Ruin_{index:00}", world, yaw) : null;
+                case PropKind.BlockchainNode:
+                case PropKind.EnergyTower:
+                    return lowPolyTowerPrefab ? InstantiateOverride(lowPolyTowerPrefab, $"Env_Tower_{index:00}", world, yaw) : null;
+                case PropKind.StonePillar:
+                    return lowPolyTreePrefab ? InstantiateOverride(lowPolyTreePrefab, $"Env_Tree_{index:00}", world, yaw) : null;
+                case PropKind.RandomRock:
+                case PropKind.AirdropStation:
+                    return lowPolyRockPrefab ? InstantiateOverride(lowPolyRockPrefab, $"Env_Rock_{index:00}", world, yaw) : null;
+                default:
+                    return null;
+            }
+        }
+
         switch (kind)
         {
             case PropKind.CivilizationRuin:
@@ -224,6 +252,18 @@ public class EnvironmentPropSpawner : MonoBehaviour
             default:
                 return null;
         }
+    }
+
+    GameObject InstantiateOverride(GameObject prefab, string name, Vector3 world, float yaw)
+    {
+        GameObject obj = Instantiate(prefab, world, Quaternion.Euler(0f, yaw, 0f));
+        obj.name = name;
+        obj.transform.SetParent(_propsRoot, true);
+
+        // Random scale variance
+        float scaleMultiplier = NextFloat(0.8f, 1.5f);
+        obj.transform.localScale = obj.transform.localScale * scaleMultiplier;
+        return obj;
     }
 
     GameObject BuildCivilizationRuin(Vector3 world, float yaw, int index)
@@ -262,8 +302,7 @@ public class EnvironmentPropSpawner : MonoBehaviour
         int rubbleCount = NextInt(4, 7);
         for (int i = 0; i < rubbleCount; i++)
         {
-            PrimitiveType rubbleType = NextFloat() > 0.5f ? PrimitiveType.Sphere : PrimitiveType.Cube;
-            GameObject rubble = CreatePrimitive(rubbleType, $"Rubble_{i}", root.transform);
+            GameObject rubble = CreatePrimitive(PrimitiveType.Cube, $"Rubble_{i}", root.transform);
             rubble.transform.localPosition = new Vector3(NextFloat(-2f, 2f), NextFloat(0.08f, 0.35f), NextFloat(-2f, 2f));
             rubble.transform.localRotation = Quaternion.Euler(NextFloat(0f, 360f), NextFloat(0f, 360f), NextFloat(0f, 360f));
             rubble.transform.localScale = Vector3.one * NextFloat(0.15f, 0.45f);
@@ -566,8 +605,7 @@ public class EnvironmentPropSpawner : MonoBehaviour
 
         for (int i = 0; i < chunks; i++)
         {
-            PrimitiveType type = NextFloat() > 0.35f ? PrimitiveType.Sphere : PrimitiveType.Cube;
-            GameObject rock = CreatePrimitive(type, $"Chunk_{i}", root.transform);
+            GameObject rock = CreatePrimitive(PrimitiveType.Cube, $"Chunk_{i}", root.transform);
             rock.transform.localPosition = new Vector3(NextFloat(-0.25f, 0.25f), NextFloat(0.15f, 0.45f), NextFloat(-0.25f, 0.25f));
             rock.transform.localRotation = Quaternion.Euler(NextFloat(0f, 25f), NextFloat(0f, 360f), NextFloat(0f, 25f));
             float size = NextFloat(0.35f, 1.1f);

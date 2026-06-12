@@ -5,13 +5,15 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// NPC proximity detector + E key trigger. Opens AgentUI when near.
-/// Attach to the NPC GameObject (must have a Collider or CharacterController).
+/// Attach to the NPC GameObject.
 /// </summary>
 public class AgentNPC : MonoBehaviour
 {
+    const string TalkPrompt = "\u3010\u6309 E \u4e0e\u5927\u796d\u53f8\u5bf9\u8bdd\u3011";
+
     [Header("Interaction")]
     [SerializeField] float interactRadius = 5f;
-    [SerializeField] string npcName = "智者";
+    [SerializeField] string npcName = "\u5927\u796d\u53f8";
 
     Transform _player;
     bool _playerNear;
@@ -19,6 +21,8 @@ public class AgentNPC : MonoBehaviour
 
     void Start()
     {
+        NpcVisualFactory.ApplyHighPriest(gameObject);
+
         GameObject player = GameObject.Find("Player");
         if (player != null)
         {
@@ -38,7 +42,7 @@ public class AgentNPC : MonoBehaviour
 
         if (_playerNear && !_wasPlayerNear)
         {
-            HUDPromptChannel.Set(this, npcName, "【按 E 与大祭司对话】", -distance);
+            HUDPromptChannel.Set(this, npcName, TalkPrompt, -distance);
         }
         else if (!_playerNear && _wasPlayerNear)
         {
@@ -50,7 +54,7 @@ public class AgentNPC : MonoBehaviour
         }
         else if (_playerNear && !AgentUI.IsOpen)
         {
-            HUDPromptChannel.Set(this, npcName, "【按 E 与大祭司对话】", -distance);
+            HUDPromptChannel.Set(this, npcName, TalkPrompt, -distance);
         }
 
         _wasPlayerNear = _playerNear;
@@ -69,6 +73,11 @@ public class AgentNPC : MonoBehaviour
 
     static bool WasEPressedThisFrame()
     {
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return false;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
 #else

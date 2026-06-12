@@ -33,6 +33,11 @@ public class QuestLogUI : MonoBehaviour
 
     void Update()
     {
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
         {

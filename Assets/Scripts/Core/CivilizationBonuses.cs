@@ -9,22 +9,14 @@ public static class CivilizationBonuses
 
     public static int GetMoonCrystalBonus(CivilizationType type)
     {
-        if (type == CivilizationType.OpenDAO)
-        {
-            return OpenDaoMoonCrystalBonus;
-        }
-
-        return 0;
+        return type == CivilizationType.OpenDAO ? OpenDaoMoonCrystalBonus : 0;
     }
 
     public static int GetRedDonationReputationReward(CivilizationType type)
     {
-        if (type == CivilizationType.TradeDAO)
-        {
-            return TradeDaoRedDonationReputation;
-        }
-
-        return DefaultRedDonationReputation;
+        return type == CivilizationType.TradeDAO
+            ? TradeDaoRedDonationReputation
+            : DefaultRedDonationReputation;
     }
 
     public static string GetBonusDescription(CivilizationType type)
@@ -38,11 +30,11 @@ public static class CivilizationBonuses
         switch (type)
         {
             case CivilizationType.OpenDAO:
-                return "自由加入";
+                return "Open Entry";
             case CivilizationType.TradeDAO:
-                return "自由交换";
+                return "Free Exchange";
             case CivilizationType.KnowledgeDAO:
-                return "共建文明";
+                return "Shared Building";
             default:
                 return string.Empty;
         }
@@ -53,11 +45,11 @@ public static class CivilizationBonuses
         switch (type)
         {
             case CivilizationType.OpenDAO:
-                return "采集额外获得20 MOON";
+                return "+20 MOON from each Moon Crystal";
             case CivilizationType.TradeDAO:
-                return "捐赠额外获得40 Reputation";
+                return "+40 Reputation from Red DAO donation";
             case CivilizationType.KnowledgeDAO:
-                return "Builder文明拥有建设加成";
+                return "Builder civilization has construction focus";
             default:
                 return string.Empty;
         }
@@ -74,7 +66,7 @@ public static class CivilizationBonuses
             case CivilizationType.KnowledgeDAO:
                 return "Builder DAO";
             default:
-                return "未创建";
+                return "Not Created";
         }
     }
 }

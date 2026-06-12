@@ -43,6 +43,11 @@ public class WelcomeIntroUI : MonoBehaviour
             return;
         }
 
+        if (GameplayInputGate.IsTextInputFocused())
+        {
+            return;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {

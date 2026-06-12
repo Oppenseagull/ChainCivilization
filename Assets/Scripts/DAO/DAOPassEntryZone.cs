@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Grants a DAO Pass when the player enters this trigger zone (once requirements are met).
+/// Grants a DAO Pass when the player enters this trigger zone once requirements are met.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class DAOPassEntryZone : MonoBehaviour
@@ -14,10 +14,15 @@ public class DAOPassEntryZone : MonoBehaviour
 
     bool _playerInside;
     Transform _player;
+    Collider _zoneCollider;
 
     void Start()
     {
-        Debug.Log("[DAO DEBUG] Start OK DAOPassEntryZone");
+        _zoneCollider = GetComponent<Collider>();
+        if (_zoneCollider != null)
+        {
+            _zoneCollider.isTrigger = true;
+        }
 
         GroundSnapUtility.SnapTransform(transform, groundTriggerCenterHeight);
 
@@ -25,15 +30,6 @@ public class DAOPassEntryZone : MonoBehaviour
         if (player != null)
         {
             _player = player.transform;
-        }
-
-        if (_player == null)
-        {
-            Debug.LogError("[DAO DEBUG] Player NULL DAOPassEntryZone");
-        }
-        else
-        {
-            Debug.Log("[DAO DEBUG] Player Found: " + _player.name + " DAOPassEntryZone");
         }
     }
 
@@ -53,40 +49,69 @@ public class DAOPassEntryZone : MonoBehaviour
             return;
         }
 
-        Debug.Log("[DAO DEBUG] Enter Pass Zone");
-
         _playerInside = true;
         if (_player == null)
         {
             _player = other.transform.root;
         }
 
+        TryGrantPassIfEligible();
+    }
+
+    void Update()
+    {
+        if (_player == null)
+        {
+            GameObject player = GameObject.Find("Player");
+            if (player != null)
+            {
+                _player = player.transform;
+            }
+        }
+
+        if (_player == null)
+        {
+            return;
+        }
+
+        bool isInside = IsPlayerInsideZone();
+        if (isInside)
+        {
+            _playerInside = true;
+            TryGrantPassIfEligible();
+        }
+        else if (_playerInside)
+        {
+            _playerInside = false;
+            HUDPromptChannel.Clear(this);
+        }
+    }
+
+    void TryGrantPassIfEligible()
+    {
         TokenManager tokens = TokenManager.Instance;
         ReputationManager reputation = ReputationManager.Instance;
-        int moon = tokens != null ? tokens.MoonBalance : 0;
-        int rep = reputation != null ? reputation.GetReputation() : 0;
 
         if (requireMoon && !DAORequirements.MeetsGreenDaoMoonRequirement(tokens))
         {
-            Debug.Log("[DAO DEBUG] Pass Failed Moon=" + moon + " Rep=" + rep);
+            Debug.Log($"[DAOPassEntryZone] MOON requirement not met: {(tokens != null ? tokens.MoonBalance : 0)}/{DAORequirements.GreenDaoRequiredMoon}");
             return;
         }
 
         if (requireReputation && !DAORequirements.MeetsGreenDaoReputationRequirement(reputation))
         {
-            Debug.Log("[DAO DEBUG] Pass Failed Moon=" + moon + " Rep=" + rep);
+            Debug.Log($"[DAOPassEntryZone] REP requirement not met: {(reputation != null ? reputation.GetReputation() : 0)}/{DAORequirements.GreenDaoRequiredReputation}");
             return;
         }
 
         DAOPassManager passes = DAOPassManager.Instance;
-        if (passes != null && passes.TryGrantPass(passId, passDisplayName))
+        if (passes != null && passes.HasPass(passId))
         {
-            Debug.Log("[DAO DEBUG] Pass Granted");
+            return; // Already has pass, no need to log
         }
-        else
-        {
-            Debug.Log("[DAO DEBUG] Pass Failed Moon=" + moon + " Rep=" + rep + " (already has pass or manager null)");
-        }
+
+        Debug.Log($"[DAOPassEntryZone] Requirements met! Granting pass: {passDisplayName}");
+        passes?.TryGrantPass(passId, passDisplayName);
     }
 
     void OnTriggerExit(Collider other)
@@ -129,6 +154,33 @@ public class DAOPassEntryZone : MonoBehaviour
     void OnDisable()
     {
         HUDPromptChannel.Clear(this);
+    }
+
+    bool IsPlayerInsideZone()
+    {
+        if (_zoneCollider == null)
+        {
+            _zoneCollider = GetComponent<Collider>();
+        }
+
+        if (_zoneCollider == null || _player == null)
+        {
+            return false;
+        }
+
+        Vector3 playerPosition = _player.position;
+
+        // Use closest point on the collider for a reliable horizontal-distance check.
+        // This avoids false negatives when the collider is thin on the Y axis
+        // or when GroundSnap places it slightly above/below the player's feet.
+        Vector3 closestPoint = _zoneCollider.ClosestPoint(playerPosition);
+        Vector3 delta = closestPoint - playerPosition;
+
+        // Ignore vertical difference (Y) so height mismatches don't block the trigger.
+        float horizontalDistanceSq = delta.x * delta.x + delta.z * delta.z;
+        float verticalDistance = Mathf.Abs(delta.y);
+
+        return horizontalDistanceSq <= 25f && verticalDistance <= 50f;
     }
 
     static bool IsPlayer(Collider other)

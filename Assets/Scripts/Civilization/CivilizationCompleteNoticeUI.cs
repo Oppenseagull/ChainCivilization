@@ -2,11 +2,10 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Shows civilization creation completion notice; auto-closes after 6 seconds.
+/// Shows civilization creation completion notice after the ceremony.
 /// </summary>
 public class CivilizationCompleteNoticeUI : MonoBehaviour
 {
-    [SerializeField] float delayBeforeShow = 5f;
     [SerializeField] float displayDuration = 6f;
 
     bool _isShowing;
@@ -64,17 +63,16 @@ public class CivilizationCompleteNoticeUI : MonoBehaviour
             StopCoroutine(_showRoutine);
         }
 
-        _showRoutine = StartCoroutine(ShowAfterCeremony(type));
+        _showRoutine = StartCoroutine(ShowAfterCeremony());
     }
 
-    IEnumerator ShowAfterCeremony(CivilizationType type)
+    IEnumerator ShowAfterCeremony()
     {
         while (CivilizationClimaxUI.IsCeremonyActive)
         {
             yield return null;
         }
 
-        // Ceremony already exceeds the original pre-show delay.
         _timer = displayDuration;
         _isShowing = true;
         _showRoutine = null;
@@ -99,20 +97,20 @@ public class CivilizationCompleteNoticeUI : MonoBehaviour
         float lineY = y + 12f;
         const float lineHeight = 34f;
 
-        GUI.Label(new Rect(x, lineY, width, lineHeight), "你已完成第一份文明共识。", _titleStyle);
+        GUI.Label(new Rect(x, lineY, width, lineHeight), "Your first civilization consensus is complete.", _titleStyle);
         lineY += lineHeight + 8f;
 
-        GUI.Label(new Rect(x, lineY, width, lineHeight), "未来：", _sectionStyle);
+        GUI.Label(new Rect(x, lineY, width, lineHeight), "Next, this civilization can:", _sectionStyle);
         lineY += lineHeight;
 
-        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "你可以创造货币。", _bodyStyle);
+        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "Create its own currency.", _bodyStyle);
         lineY += lineHeight - 4f;
-        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "你可以制定规则。", _bodyStyle);
+        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "Write stronger rules.", _bodyStyle);
         lineY += lineHeight - 4f;
-        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "你可以吸引新的居民。", _bodyStyle);
+        GUI.Label(new Rect(x + 24f, lineY, width - 24f, lineHeight), "Invite new citizens.", _bodyStyle);
         lineY += lineHeight + 12f;
 
-        GUI.Label(new Rect(x, lineY, width, lineHeight + 8f), "文明已经开始。", _footerStyle);
+        GUI.Label(new Rect(x, lineY, width, lineHeight + 8f), "The civilization has begun.", _footerStyle);
     }
 
     void EnsureStyles()

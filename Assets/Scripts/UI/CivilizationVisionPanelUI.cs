@@ -34,6 +34,11 @@ public class CivilizationVisionPanelUI : MonoBehaviour
             return;
         }
 
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.vKey.wasPressedThisFrame)
         {

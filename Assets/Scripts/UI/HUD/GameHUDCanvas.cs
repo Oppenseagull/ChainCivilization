@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Unified screen-space HUD: quest (top-left), status (top-right), controls (bottom-left), interact (bottom-center).
+/// Unified screen-space HUD: minimap (top-left), status and quest tracker (right), controls (bottom-left), interact (bottom-center).
 /// </summary>
 public class GameHUDCanvas : MonoBehaviour
 {
@@ -10,8 +10,11 @@ public class GameHUDCanvas : MonoBehaviour
     public static bool IsActive => Instance != null;
 
     MainQuestManager _questManager;
+    Transform _player;
 
     Canvas _canvas;
+    ExplorationMapView.MapWidget _miniMapWidget;
+
     GameObject _questRoot;
     Text _questHeaderText;
     Text _questTitleText;
@@ -48,6 +51,12 @@ public class GameHUDCanvas : MonoBehaviour
             _questManager = FindFirstObjectByType<MainQuestManager>();
         }
 
+        GameObject player = GameObject.Find("Player");
+        if (player != null)
+        {
+            _player = player.transform;
+        }
+
         BuildCanvas();
     }
 
@@ -71,9 +80,29 @@ public class GameHUDCanvas : MonoBehaviour
             return;
         }
 
+        RefreshMiniMap();
         RefreshQuestPanel();
         RefreshStatusPanel();
         RefreshInteractionPanel();
+    }
+
+    void RefreshMiniMap()
+    {
+        if (_miniMapWidget == null)
+        {
+            return;
+        }
+
+        if (_player == null)
+        {
+            GameObject player = GameObject.Find("Player");
+            if (player != null)
+            {
+                _player = player.transform;
+            }
+        }
+
+        ExplorationMapView.Refresh(_miniMapWidget, _questManager, _player);
     }
 
     void RefreshQuestPanel()
@@ -152,45 +181,59 @@ public class GameHUDCanvas : MonoBehaviour
 
         canvasObject.AddComponent<GraphicRaycaster>();
 
-        _questRoot = BuildQuestPanel(canvasObject.transform);
+        BuildMiniMapPanel(canvasObject.transform);
         BuildStatusPanel(canvasObject.transform);
+        _questRoot = BuildQuestPanel(canvasObject.transform);
         BuildControlsPanel(canvasObject.transform);
         _interactRoot = BuildInteractionPanel(canvasObject.transform);
     }
 
+    void BuildMiniMapPanel(Transform parent)
+    {
+        GameObject root = CreatePanel("TopLeft_Minimap", parent,
+            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+            new Vector2(16f, -16f), new Vector2(286f, 206f),
+            new Color(0.03f, 0.06f, 0.1f, 0.42f));
+
+        CanvasGroup group = root.AddComponent<CanvasGroup>();
+        group.alpha = 0.78f;
+
+        _miniMapWidget = ExplorationMapView.Build(root.transform, 258f, 178f, true);
+    }
+
     GameObject BuildQuestPanel(Transform parent)
     {
-        GameObject root = CreatePanel("TopLeft_Quest", parent,
-            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(16f, -16f), new Vector2(400f, 300f),
-            new Color(0.05f, 0.08f, 0.14f, 0.82f));
+        GameObject root = CreatePanel("Right_Quest", parent,
+            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(-16f, -136f), new Vector2(360f, 336f),
+            new Color(0.05f, 0.08f, 0.14f, 0.54f));
 
-        _questHeaderText = CreateText(root.transform, "Header", 16, FontStyle.Bold,
+        _questHeaderText = CreateTopAnchoredText(root.transform, "Header", 16, FontStyle.Bold,
             new Color(0.75f, 0.88f, 1f), TextAnchor.UpperLeft,
-            new Vector2(12f, -8f), new Vector2(-12f, -30f));
+            12f, 10f, 336f, 22f);
 
-        _questTitleText = CreateText(root.transform, "Title", 19, FontStyle.Bold,
+        _questTitleText = CreateTopAnchoredText(root.transform, "Title", 19, FontStyle.Bold,
             new Color(1f, 0.92f, 0.45f), TextAnchor.UpperLeft,
-            new Vector2(12f, -32f), new Vector2(-12f, -58f));
+            12f, 36f, 336f, 30f);
 
-        _questDistanceText = CreateText(root.transform, "Distance", 14, FontStyle.Normal,
+        _questDistanceText = CreateTopAnchoredText(root.transform, "Distance", 14, FontStyle.Normal,
             new Color(0.7f, 0.85f, 0.95f), TextAnchor.UpperLeft,
-            new Vector2(12f, -60f), new Vector2(-12f, -78f));
+            12f, 70f, 336f, 20f);
 
-        _questStepsText = CreateText(root.transform, "Steps", 13, FontStyle.Normal,
+        _questStepsText = CreateTopAnchoredText(root.transform, "Steps", 13, FontStyle.Normal,
             new Color(0.78f, 0.86f, 0.95f), TextAnchor.UpperLeft,
-            new Vector2(12f, -82f), new Vector2(-12f, -214f));
+            12f, 98f, 336f, 110f);
         _questStepsText.horizontalOverflow = HorizontalWrapMode.Wrap;
         _questStepsText.verticalOverflow = VerticalWrapMode.Overflow;
         _questStepsText.lineSpacing = 1.05f;
 
-        _questNextHeaderText = CreateText(root.transform, "NextHeader", 14, FontStyle.Bold,
+        _questNextHeaderText = CreateTopAnchoredText(root.transform, "NextHeader", 14, FontStyle.Bold,
             new Color(0.75f, 0.88f, 1f), TextAnchor.UpperLeft,
-            new Vector2(12f, -218f), new Vector2(-12f, -238f));
+            12f, 222f, 336f, 20f);
 
-        _questNextActionText = CreateText(root.transform, "NextAction", 14, FontStyle.Bold,
+        _questNextActionText = CreateTopAnchoredText(root.transform, "NextAction", 14, FontStyle.Bold,
             new Color(0.55f, 0.95f, 0.75f), TextAnchor.UpperLeft,
-            new Vector2(12f, -240f), new Vector2(-12f, -10f));
+            12f, 248f, 336f, 76f);
         _questNextActionText.horizontalOverflow = HorizontalWrapMode.Wrap;
         _questNextActionText.verticalOverflow = VerticalWrapMode.Overflow;
         _questNextHeaderText.text = "【下一步】";
@@ -203,7 +246,7 @@ public class GameHUDCanvas : MonoBehaviour
         GameObject root = CreatePanel("TopRight_Status", parent,
             new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
             new Vector2(-16f, -16f), new Vector2(220f, 108f),
-            new Color(0.06f, 0.08f, 0.12f, 0.78f));
+            new Color(0.06f, 0.08f, 0.12f, 0.56f));
 
         _moonText = CreateText(root.transform, "Moon", 17, FontStyle.Bold,
             new Color(1f, 0.88f, 0.35f), TextAnchor.UpperLeft,
@@ -223,7 +266,7 @@ public class GameHUDCanvas : MonoBehaviour
         GameObject root = CreatePanel("BottomLeft_Controls", parent,
             new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f),
             new Vector2(16f, 16f), new Vector2(200f, 232f),
-            new Color(0.04f, 0.06f, 0.1f, 0.72f));
+            new Color(0.04f, 0.06f, 0.1f, 0.48f));
 
         _controlsText = CreateText(root.transform, "Controls", 14, FontStyle.Normal,
             new Color(0.72f, 0.8f, 0.9f, 0.95f), TextAnchor.UpperLeft,
@@ -239,7 +282,7 @@ public class GameHUDCanvas : MonoBehaviour
         GameObject root = CreatePanel("BottomCenter_Interaction", parent,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
             new Vector2(0f, 24f), new Vector2(600f, 168f),
-            new Color(0.05f, 0.09f, 0.16f, 0.88f));
+            new Color(0.05f, 0.09f, 0.16f, 0.68f));
 
         _interactLine1Text = CreateText(root.transform, "Line1", 18, FontStyle.Bold,
             new Color(0.9f, 0.95f, 1f), TextAnchor.UpperCenter,
@@ -288,6 +331,29 @@ public class GameHUDCanvas : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.offsetMin = offsetMin;
         rect.offsetMax = offsetMax;
+
+        Text text = textObject.AddComponent<Text>();
+        text.font = _font;
+        text.fontSize = fontSize;
+        text.fontStyle = fontStyle;
+        text.color = color;
+        text.alignment = alignment;
+        text.supportRichText = false;
+        return text;
+    }
+
+    static Text CreateTopAnchoredText(Transform parent, string name, int fontSize, FontStyle fontStyle,
+        Color color, TextAnchor alignment, float left, float top, float width, float height)
+    {
+        GameObject textObject = new GameObject(name, typeof(RectTransform));
+        textObject.transform.SetParent(parent, false);
+
+        RectTransform rect = textObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(left, -top);
+        rect.sizeDelta = new Vector2(width, height);
 
         Text text = textObject.AddComponent<Text>();
         text.font = _font;

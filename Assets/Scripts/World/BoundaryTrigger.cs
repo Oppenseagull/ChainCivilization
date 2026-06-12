@@ -73,14 +73,46 @@ public class BoundaryTrigger : MonoBehaviour
             Transform stone = zone.Find("BoundaryStone");
             if (stone != null)
             {
+                LandmarkVisualFactory.ApplyBoundaryGateway(stone.gameObject);
                 VisualHierarchy.Apply(stone.gameObject, VisualHierarchyTier.Boundary);
                 VisualHierarchyOptions boundaryLabel = VisualHierarchyOptions.ForInteractive("BOUNDARY", new Color(0.82f, 0.9f, 1f));
                 boundaryLabel.EnableFloat = false;
                 boundaryLabel.EnableSpin = false;
                 boundaryLabel.LabelHeight = 14f;
                 VisualHierarchy.ApplyInteractiveFxOnly(stone.gameObject, boundaryLabel);
+                CreateSkyBeam(stone);
             }
         }
+    }
+
+    void CreateSkyBeam(Transform parent)
+    {
+        GameObject beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        beam.name = "SkyBeam";
+        beam.transform.SetParent(parent, false);
+        Destroy(beam.GetComponent<Collider>());
+
+        beam.transform.localPosition = new Vector3(0f, 250f, 0f);
+        beam.transform.localScale = new Vector3(8f, 250f, 8f);
+
+        Renderer r = beam.GetComponent<Renderer>();
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        Material mat = new Material(shader);
+
+        mat.SetInt("_Surface", 1);
+        mat.SetInt("_Blend", 0);
+        mat.SetInt("_ZWrite", 0);
+        mat.renderQueue = 3000;
+        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+
+        Color baseColor = new Color(0.2f, 0.6f, 1f, 0.2f);
+        mat.color = baseColor;
+        mat.SetColor("_BaseColor", baseColor);
+        mat.EnableKeyword("_EMISSION");
+        mat.SetColor("_EmissionColor", new Color(0.1f, 0.4f, 1f) * 2f);
+
+        r.sharedMaterial = mat;
     }
 
     void SnapTriggerToGround()
@@ -107,6 +139,11 @@ public class BoundaryTrigger : MonoBehaviour
     void Update()
     {
         if (!_playerInside || _uiDismissed || !HasGreenPass())
+        {
+            return;
+        }
+
+        if (GameplayInputGate.BlocksGameplayShortcuts)
         {
             return;
         }

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 
 /// <summary>
-/// Session-only civilization journal timeline. Auto-records DAO visits, rewards, passes, and creation.
+/// Session-only civilization journal timeline. Auto-records DAO visits, rewards,
+/// passes, and civilization creation.
 /// </summary>
 public static class CivilizationJournalLog
 {
@@ -62,7 +63,7 @@ public static class CivilizationJournalLog
             return;
         }
 
-        AddEntry(DemoDayLabel, $"获得 {amount} MOON");
+        AddEntry(DemoDayLabel, $"Gained {amount} MOON");
     }
 
     public static void RecordMoonRewardOnce(string uniqueKey, int amount)
@@ -72,7 +73,7 @@ public static class CivilizationJournalLog
             return;
         }
 
-        AddEntry(DemoDayLabel, $"获得 {amount} MOON");
+        AddEntry(DemoDayLabel, $"Gained {amount} MOON");
     }
 
     public static void RecordReputationReward(int amount)
@@ -88,7 +89,7 @@ public static class CivilizationJournalLog
             return;
         }
 
-        AddEntry(DemoDayLabel, $"获得 {amount} Reputation");
+        AddEntry(DemoDayLabel, $"Gained {amount} Reputation");
     }
 
     public static void RecordReputationRewardOnce(string uniqueKey, int amount)
@@ -98,7 +99,7 @@ public static class CivilizationJournalLog
             return;
         }
 
-        AddEntry(DemoDayLabel, $"获得 {amount} Reputation");
+        AddEntry(DemoDayLabel, $"Gained {amount} Reputation");
     }
 
     public static void RecordPass(string passId, string displayName)
@@ -110,7 +111,7 @@ public static class CivilizationJournalLog
         }
 
         string label = FormatPassLabel(passId, displayName);
-        AddEntry(DemoDayLabel, $"获得 {label}");
+        AddEntry(DemoDayLabel, $"Received {label}");
     }
 
     public static void RecordCivilizationCreated(CivilizationType type, CivilizationRuleSelection.JoinRule joinRule)
@@ -122,7 +123,7 @@ public static class CivilizationJournalLog
 
         string civName = CivilizationBonuses.GetAddressPanelCivilizationName(type);
         string ruleLine = CivilizationRuleSelection.GetDisplayLine(joinRule);
-        AddEntry(DemoDayLabel, $"创建 {civName}", "规则：", ruleLine);
+        AddEntry(DemoDayLabel, $"Created {civName}", "Rule:", ruleLine);
     }
 
     static void GetDaoVisitLines(DaoVisitKind kind, out string daoName, out string learnLine)
@@ -130,19 +131,19 @@ public static class CivilizationJournalLog
         switch (kind)
         {
             case DaoVisitKind.Blue:
-                daoName = "发现 Blue DAO";
-                learnLine = "学习开放协作";
+                daoName = "Discovered Blue DAO";
+                learnLine = "Learned open collaboration";
                 break;
             case DaoVisitKind.Red:
-                daoName = "发现 Red DAO";
-                learnLine = "学习市场文明";
+                daoName = "Discovered Red DAO";
+                learnLine = "Learned market civilization";
                 break;
             case DaoVisitKind.Green:
-                daoName = "发现 Green DAO";
-                learnLine = "学习准入文明";
+                daoName = "Discovered Green DAO";
+                learnLine = "Learned access civilization";
                 break;
             default:
-                daoName = "发现 DAO";
+                daoName = "Discovered DAO";
                 learnLine = string.Empty;
                 break;
         }

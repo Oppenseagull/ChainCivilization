@@ -1,5 +1,8 @@
+using System;
+using UnityEngine;
+
 /// <summary>
-/// Stores the player's first civilization join-rule choice (demo-only, no governance system).
+/// Stores the player's first civilization join-rule choice.
 /// </summary>
 public static class CivilizationRuleSelection
 {
@@ -11,16 +14,32 @@ public static class CivilizationRuleSelection
         ContributionRequired
     }
 
-    public static JoinRule SelectedJoinRule { get; private set; } = JoinRule.None;
+    static bool _loaded;
+    static JoinRule _selectedJoinRule = JoinRule.None;
+
+    public static JoinRule SelectedJoinRule
+    {
+        get
+        {
+            EnsureLoaded();
+            return _selectedJoinRule;
+        }
+        private set => _selectedJoinRule = value;
+    }
 
     public static void Reset()
     {
+        _loaded = true;
         SelectedJoinRule = JoinRule.None;
+        PlayerPrefs.DeleteKey(GameSaveKeys.SelectedJoinRule);
+        PlayerPrefs.Save();
     }
 
     public static void Select(JoinRule rule)
     {
         SelectedJoinRule = rule;
+        PlayerPrefs.SetInt(GameSaveKeys.SelectedJoinRule, (int)rule);
+        PlayerPrefs.Save();
     }
 
     public static string GetDisplayLine(JoinRule rule)
@@ -28,14 +47,27 @@ public static class CivilizationRuleSelection
         switch (rule)
         {
             case JoinRule.AnyoneCanJoin:
-                return "任何人都可以加入";
+                return "Anyone can join";
             case JoinRule.PassRequired:
-                return "需要Pass才能加入";
+                return "A Pass is required to join";
             case JoinRule.ContributionRequired:
-                return "需要贡献才能加入";
+                return "Contribution is required to join";
             default:
-                return "未选择";
+                return "Not selected";
         }
     }
-}
 
+    static void EnsureLoaded()
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        int saved = PlayerPrefs.GetInt(GameSaveKeys.SelectedJoinRule, (int)JoinRule.None);
+        SelectedJoinRule = Enum.IsDefined(typeof(JoinRule), saved)
+            ? (JoinRule)saved
+            : JoinRule.None;
+        _loaded = true;
+    }
+}

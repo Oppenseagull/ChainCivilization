@@ -2,13 +2,31 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// In-memory civilization selection (session only, no persistence).
+/// Stores the player's selected civilization and persists it across scene reloads.
 /// </summary>
 public static class CivilizationManager
 {
-    public static CivilizationType selectedCivilizationType { get; private set; } = CivilizationType.None;
+    static bool _loaded;
+    static CivilizationType _selectedCivilizationType = CivilizationType.None;
 
-    public static bool HasSelectedCivilization => selectedCivilizationType != CivilizationType.None;
+    public static CivilizationType selectedCivilizationType
+    {
+        get
+        {
+            EnsureLoaded();
+            return _selectedCivilizationType;
+        }
+        private set => _selectedCivilizationType = value;
+    }
+
+    public static bool HasSelectedCivilization
+    {
+        get
+        {
+            EnsureLoaded();
+            return _selectedCivilizationType != CivilizationType.None;
+        }
+    }
 
     public static event Action<CivilizationType> OnCivilizationSelected;
 
@@ -19,14 +37,20 @@ public static class CivilizationManager
             return;
         }
 
+        EnsureLoaded();
         selectedCivilizationType = type;
+        PlayerPrefs.SetInt(GameSaveKeys.SelectedCivilizationType, (int)type);
+        PlayerPrefs.Save();
         Debug.Log($"CivilizationManager: selectedCivilizationType = {selectedCivilizationType}");
         OnCivilizationSelected?.Invoke(selectedCivilizationType);
     }
 
     public static void ResetSelection()
     {
+        _loaded = true;
         selectedCivilizationType = CivilizationType.None;
+        PlayerPrefs.DeleteKey(GameSaveKeys.SelectedCivilizationType);
+        PlayerPrefs.Save();
     }
 
     public static bool TryParseTypeFromLabel(string label, out CivilizationType type)
@@ -51,11 +75,11 @@ public static class CivilizationManager
         switch (type)
         {
             case CivilizationType.OpenDAO:
-                return "开放协作";
+                return "Open Collaboration";
             case CivilizationType.TradeDAO:
-                return "自由贸易";
+                return "Free Trade";
             case CivilizationType.KnowledgeDAO:
-                return "知识共享";
+                return "Shared Knowledge";
             default:
                 return string.Empty;
         }
@@ -66,11 +90,11 @@ public static class CivilizationManager
         switch (type)
         {
             case CivilizationType.OpenDAO:
-                return "开放协作高于封闭垄断";
+                return "Open collaboration rises above closed walls.";
             case CivilizationType.TradeDAO:
-                return "自由交换创造价值";
+                return "Free exchange creates shared value.";
             case CivilizationType.KnowledgeDAO:
-                return "知识属于所有旅者";
+                return "Knowledge belongs to every builder.";
             default:
                 return string.Empty;
         }
@@ -81,13 +105,13 @@ public static class CivilizationManager
         switch (type)
         {
             case CivilizationType.OpenDAO:
-                return "开放协作文明";
+                return "Open Collaboration Civilization";
             case CivilizationType.TradeDAO:
-                return "自由贸易文明";
+                return "Free Trade Civilization";
             case CivilizationType.KnowledgeDAO:
-                return "知识共享文明";
+                return "Shared Knowledge Civilization";
             default:
-                return "暂无";
+                return "None";
         }
     }
 
@@ -102,21 +126,41 @@ public static class CivilizationManager
             case CivilizationType.KnowledgeDAO:
                 return "KnowledgeDAO";
             default:
-                return "暂无";
+                return "None";
         }
+    }
+
+    static void EnsureLoaded()
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        int saved = PlayerPrefs.GetInt(GameSaveKeys.SelectedCivilizationType, (int)CivilizationType.None);
+        _selectedCivilizationType = Enum.IsDefined(typeof(CivilizationType), saved)
+            ? (CivilizationType)saved
+            : CivilizationType.None;
+        _loaded = true;
     }
 
     static bool TryGetTypeFromLabel(string label, out CivilizationType type)
     {
         switch (label)
         {
-            case "开放协作":
+            case "Open Collaboration":
+            case "Open DAO":
+            case "\u5F00\u653E\u534F\u4F5C":
                 type = CivilizationType.OpenDAO;
                 return true;
-            case "自由贸易":
+            case "Free Trade":
+            case "Trade DAO":
+            case "\u81EA\u7531\u8D38\u6613":
                 type = CivilizationType.TradeDAO;
                 return true;
-            case "知识共享":
+            case "Shared Knowledge":
+            case "Knowledge DAO":
+            case "\u77E5\u8BC6\u5171\u4EAB":
                 type = CivilizationType.KnowledgeDAO;
                 return true;
             default:

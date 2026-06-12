@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 #endif
 
 /// <summary>
-/// One-time DAO introduction cards (PlayerPrefs). Dismiss with E.
+/// One-time DAO introduction cards. Dismiss with E.
 /// </summary>
 public static class DAOIntroCard
 {
@@ -80,6 +80,11 @@ public static class DAOIntroCard
             return false;
         }
 
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return true;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         bool pressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
 #else
@@ -98,9 +103,9 @@ public static class DAOIntroCard
 
     public static void Draw(Kind kind)
     {
-        EnsureStyles(GetContent(kind));
-
         IntroContent content = GetContent(kind);
+        EnsureStyles(content);
+
         const float width = 520f;
         const float height = 200f;
         float x = (Screen.width - width) * 0.5f;
@@ -115,7 +120,7 @@ public static class DAOIntroCard
 
         GUI.Label(new Rect(x, y + 56f, width, 36f), content.Tagline, _taglineStyle);
         GUI.Label(new Rect(x, y + 96f, width, 40f), content.Description, _descriptionStyle);
-        GUI.Label(new Rect(x, y + height - 28f, width, 24f), "按 E 关闭", _footerStyle);
+        GUI.Label(new Rect(x, y + height - 28f, width, 24f), "Press E to close", _footerStyle);
     }
 
     static IntroContent GetContent(Kind kind)
@@ -126,8 +131,8 @@ public static class DAOIntroCard
                 return new IntroContent
                 {
                     Title = "Blue DAO",
-                    Tagline = "开放协作",
-                    Description = "任何人都可以贡献",
+                    Tagline = "Open Collaboration",
+                    Description = "Anyone can contribute and earn reputation.",
                     Accent = new Color(0.45f, 0.75f, 1f),
                     PanelTint = new Color(0.05f, 0.08f, 0.18f, 0.94f)
                 };
@@ -135,8 +140,8 @@ public static class DAOIntroCard
                 return new IntroContent
                 {
                     Title = "Red DAO",
-                    Tagline = "市场文明",
-                    Description = "资源交换驱动增长",
+                    Tagline = "Market Civilization",
+                    Description = "Exchange resources to grow influence.",
                     Accent = new Color(1f, 0.55f, 0.45f),
                     PanelTint = new Color(0.18f, 0.05f, 0.05f, 0.94f)
                 };
@@ -144,8 +149,8 @@ public static class DAOIntroCard
                 return new IntroContent
                 {
                     Title = "Green DAO",
-                    Tagline = "准入文明",
-                    Description = "身份决定参与资格",
+                    Tagline = "Access Civilization",
+                    Description = "Identity and credentials decide participation.",
                     Accent = new Color(0.45f, 0.95f, 0.55f),
                     PanelTint = new Color(0.04f, 0.14f, 0.08f, 0.94f)
                 };

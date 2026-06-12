@@ -2,12 +2,14 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Global reputation tracker (session only, no persistence).
+/// Global reputation tracker, persisted through PlayerPrefs so one-time DAO rewards
+/// cannot leave the player with claimed rewards but zero REP after a reload.
 /// </summary>
 public class ReputationManager : MonoBehaviour
 {
-    const string BlueDaoReputationClaimedKey = "blue_dao_reputation_claimed";
-    const string RedDaoDonationClaimedKey = "red_dao_donation_claimed";
+    const string BalanceKey = GameSaveKeys.ReputationBalance;
+    const string BlueDaoReputationClaimedKey = GameSaveKeys.BlueDaoReputationClaimed;
+    const string RedDaoDonationClaimedKey = GameSaveKeys.RedDaoDonationClaimed;
 
     static ReputationManager _instance;
 
@@ -64,7 +66,7 @@ public class ReputationManager : MonoBehaviour
         }
 
         _instance = this;
-        _reputation = 0;
+        LoadReputation();
     }
 
     void OnDestroy()
@@ -88,6 +90,38 @@ public class ReputationManager : MonoBehaviour
         }
     }
 
+    void LoadReputation()
+    {
+        if (PlayerPrefs.HasKey(BalanceKey))
+        {
+            _reputation = Mathf.Max(0, PlayerPrefs.GetInt(BalanceKey, 0));
+            return;
+        }
+
+        int migratedReputation = 0;
+        if (HasClaimedBlueDaoReputation)
+        {
+            migratedReputation += 10;
+        }
+
+        if (HasDonatedRedDao)
+        {
+            migratedReputation += CivilizationBonuses.DefaultRedDonationReputation;
+        }
+
+        _reputation = migratedReputation;
+        if (_reputation > 0)
+        {
+            SaveReputation();
+        }
+    }
+
+    void SaveReputation()
+    {
+        PlayerPrefs.SetInt(BalanceKey, _reputation);
+        PlayerPrefs.Save();
+    }
+
     public int GetReputation()
     {
         return _reputation;
@@ -101,6 +135,7 @@ public class ReputationManager : MonoBehaviour
         }
 
         _reputation += amount;
+        SaveReputation();
         ShowFloatingToast(amount);
         OnReputationChanged?.Invoke(_reputation);
     }
@@ -124,6 +159,7 @@ public class ReputationManager : MonoBehaviour
         }
 
         _reputation = Mathf.Max(0, _reputation - amount);
+        SaveReputation();
         OnReputationChanged?.Invoke(_reputation);
     }
 
@@ -134,12 +170,9 @@ public class ReputationManager : MonoBehaviour
         _reputationPopupTimer = duration > 0f ? duration : reputationPopupDuration;
     }
 
-    /// <summary>
-    /// First-time Blue DAO stele reward (default 10 reputation).
-    /// </summary>
     public bool TryClaimBlueDaoSteleReputation(
         int amount = 10,
-        string messageLine1 = "你帮助了开放协作文明。",
+        string messageLine1 = "You helped an open collaboration civilization.",
         string messageLine2 = "Reputation +10")
     {
         if (HasClaimedBlueDaoReputation || amount <= 0)
@@ -155,9 +188,6 @@ public class ReputationManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// One-time Red DAO donation: spend MOON elsewhere, then grant reputation + popup.
-    /// </summary>
     public void ResetDemoState()
     {
         _reputation = 0;
@@ -166,6 +196,7 @@ public class ReputationManager : MonoBehaviour
         _reputationPopupLine2 = null;
         _floatingToastTimer = 0f;
         _floatingToastAmount = 0;
+        PlayerPrefs.DeleteKey(BalanceKey);
         PlayerPrefs.DeleteKey(BlueDaoReputationClaimedKey);
         PlayerPrefs.DeleteKey(RedDaoDonationClaimedKey);
         PlayerPrefs.Save();
@@ -174,7 +205,7 @@ public class ReputationManager : MonoBehaviour
 
     public bool TryClaimRedDaoDonationReputation(
         int amount = 20,
-        string messageLine1 = "你资助了贸易文明。",
+        string messageLine1 = "You funded a trade civilization.",
         string messageLine2 = "Reputation +20")
     {
         if (HasDonatedRedDao || amount <= 0)

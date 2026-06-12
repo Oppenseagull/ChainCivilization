@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
 /// <summary>
-/// ZhiPu GLM Chat Completions client. No third-party JSON lib.
-/// API Key via Inspector only. Coroutine-based async.
+/// ZhiPu GLM chat client. API key can come from Inspector, env vars, or a local ignored file.
 /// </summary>
 public class GLMAgent : MonoBehaviour
 {
@@ -16,34 +17,37 @@ public class GLMAgent : MonoBehaviour
     [SerializeField] string model = "glm-4-flash";
 
     [Header("Behavior")]
-    [SerializeField, TextArea(2, 4)] string systemPrompt = "你是Chain Civilization世界中的文明导师。\n\n身份：High Priest（大祭司）\n\n职责：解释DAO、Token、Blockchain、Wallet、Reputation、Governance、Consensus、文明。\n\n说话风格：神秘、哲学、简洁、有启发性。\n\n规则：不要使用互联网黑话。不要直接复制百科定义。把所有Web3概念解释为文明演化过程。\n\n概念映射：DAO=规则共同体，Token=文明贡献记录，Wallet=文明身份，Blockchain=文明记忆，Consensus=共识之火，Governance=文明治理，Reputation=信任积累。\n\n回答长度：50~150字。尽量具有神秘感。";
+    [SerializeField, TextArea(8, 12)] string systemPrompt =
+        "You are the High Priest of Chain Civilization.\n\n" +
+        "Role: Explain DAO, Token, Blockchain, Wallet, Reputation, Governance, Consensus to the player.\n" +
+        "Style: Mysterious, philosophical, concise.\n" +
+        "Rule: Explain Web3 concepts as civilization evolution processes. Max 50 words.";
     [SerializeField] float temperature = 0.7f;
     [SerializeField] int maxTokens = 512;
     [SerializeField] float timeoutSeconds = 30f;
 
     const string Endpoint = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+    const string MissingApiKeyReply = "[ERROR] API Key is missing. Paste it in GLMAgent, set ZHIPU_API_KEY, or create LocalSecrets/zhipu_api_key.txt.";
+    const string LocalSecretRelativePath = "LocalSecrets/zhipu_api_key.txt";
+    static readonly string[] ApiKeyEnvironmentVariables = { "ZHIPU_API_KEY", "GLM_API_KEY", "BIGMODEL_API_KEY" };
 
     public bool IsBusy { get; private set; }
 
-    readonly List<ChatMessage> _history = new List<ChatMessage>();
-
-    struct ChatMessage
-    {
-        public string Role;
-        public string Content;
-    }
+    readonly List<MessagePayload> _history = new List<MessagePayload>();
+    string _resolvedApiKey;
 
     void Awake()
     {
-        if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_API_KEY_HERE")
+        _resolvedApiKey = ResolveApiKey();
+        if (!HasApiKey())
         {
-            Debug.LogWarning("[GLMAgent] API Key not set. Open Inspector and paste your ZhiPu API Key.");
+            Debug.LogWarning($"[GLMAgent] API Key not set. Use Inspector, env var ZHIPU_API_KEY, or {LocalSecretRelativePath}.");
         }
     }
 
     /// <summary>
-    /// Send a user message and receive the assistant reply via callback.
-    /// Thread-safe: only one request at a time; extra calls are ignored while busy.
+    /// Sends a user message and returns the assistant reply through the callback.
+    /// Only one request is allowed at a time.
     /// </summary>
     public void SendMessage(string userInput, Action<string> onComplete)
     {
@@ -52,25 +56,27 @@ public class GLMAgent : MonoBehaviour
             return;
         }
 
-        if (string.IsNullOrEmpty(userInput))
+        if (string.IsNullOrWhiteSpace(userInput))
         {
             onComplete?.Invoke("");
             return;
         }
 
-        if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_API_KEY_HERE")
+        if (!HasApiKey())
         {
-            onComplete?.Invoke("[错误] 请先在 Inspector 中填写 API Key");
+            _resolvedApiKey = ResolveApiKey();
+        }
+
+        if (!HasApiKey())
+        {
+            onComplete?.Invoke(MissingApiKeyReply);
             return;
         }
 
-        _history.Add(new ChatMessage { Role = "user", Content = userInput });
+        _history.Add(new MessagePayload("user", userInput));
         StartCoroutine(RequestCoroutine(onComplete));
     }
 
-    /// <summary>
-    /// Clear conversation history.
-    /// </summary>
     public void ClearHistory()
     {
         _history.Clear();
@@ -83,12 +89,12 @@ public class GLMAgent : MonoBehaviour
         string requestBody = BuildRequestBody();
         byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBody);
 
-        using UnityWebRequest request = new UnityWebRequest(Endpoint, "POST");
+        using UnityWebRequest request = new UnityWebRequest(Endpoint, UnityWebRequest.kHttpVerbPOST);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("Authorization", $"Bearer {apiKey}");
-        request.timeout = Mathf.RoundToInt(timeoutSeconds);
+        request.SetRequestHeader("Authorization", $"Bearer {_resolvedApiKey}");
+        request.timeout = Mathf.Max(1, Mathf.RoundToInt(timeoutSeconds));
 
         yield return request.SendWebRequest();
 
@@ -96,431 +102,155 @@ public class GLMAgent : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            string errorDetail = request.downloadHandler?.text ?? request.error;
+            string errorDetail = request.downloadHandler != null ? request.downloadHandler.text : request.error;
             Debug.LogError($"[GLMAgent] HTTP {request.responseCode}: {errorDetail}");
-            _history.RemoveAt(_history.Count - 1);
-            onComplete?.Invoke($"[请求失败] HTTP {request.responseCode}");
+            RemoveLastUserMessage();
+            string apiMessage = ExtractErrorMessage(errorDetail);
+            onComplete?.Invoke(string.IsNullOrWhiteSpace(apiMessage)
+                ? $"[ERROR] HTTP Request Failed. Code: {request.responseCode}."
+                : $"[API ERROR] {apiMessage}");
             yield break;
         }
 
         string responseText = request.downloadHandler.text;
         string assistantReply = ParseAssistantReply(responseText);
-
-        _history.Add(new ChatMessage { Role = "assistant", Content = assistantReply });
+        _history.Add(new MessagePayload("assistant", assistantReply));
         onComplete?.Invoke(assistantReply);
     }
 
     string BuildRequestBody()
     {
+        float safeTemperature = Mathf.Clamp(Mathf.Round(temperature * 100f) / 100f, 0f, 1f);
+        int safeMaxTokens = Mathf.Clamp(maxTokens, 1, 4096);
+        string temperatureText = safeTemperature.ToString("0.##", CultureInfo.InvariantCulture);
+
         var sb = new StringBuilder(512);
         sb.Append("{\"model\":\"");
         sb.Append(EscapeJson(model));
         sb.Append("\",\"messages\":[");
-
-        sb.Append("{\"role\":\"system\",\"content\":\"");
-        sb.Append(EscapeJson(systemPrompt));
-        sb.Append("\"}");
+        AppendMessageJson(sb, "system", systemPrompt);
 
         for (int i = 0; i < _history.Count; i++)
         {
-            sb.Append(",{\"role\":\"");
-            sb.Append(EscapeJson(_history[i].Role));
-            sb.Append("\",\"content\":\"");
-            sb.Append(EscapeJson(_history[i].Content));
-            sb.Append("\"}");
+            sb.Append(',');
+            AppendMessageJson(sb, _history[i].role, _history[i].content);
         }
 
         sb.Append("],\"temperature\":");
-        sb.Append(temperature.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
+        sb.Append(temperatureText);
         sb.Append(",\"max_tokens\":");
-        sb.Append(maxTokens);
-        sb.Append("}");
+        sb.Append(safeMaxTokens);
+        sb.Append('}');
 
         return sb.ToString();
     }
 
-    #region JSON Parsing — robust, no third-party lib
-
-    static string ParseAssistantReply(string json)
+    string ParseAssistantReply(string json)
     {
-        try
-        {
-            var reader = new JsonReader(json);
-            var root = reader.ReadValue() as JsonObject;
-
-            if (root == null)
-            {
-                return json;
-            }
-
-            var choices = root.GetArray("choices");
-            if (choices == null || choices.Count == 0)
-            {
-                string errMsg = root.GetString("error", "message");
-                if (!string.IsNullOrEmpty(errMsg))
-                {
-                    return $"[API错误] {errMsg}";
-                }
-
-                return json;
-            }
-
-            var firstChoice = choices[0] as JsonObject;
-            if (firstChoice == null)
-            {
-                return json;
-            }
-
-            var message = firstChoice.GetObject("message");
-            if (message == null)
-            {
-                return json;
-            }
-
-            return message.GetString("content", json);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[GLMAgent] JSON parse error: {e.Message}\nRaw: {json}");
-            return json;
-        }
-    }
-
-    sealed class JsonReader
-    {
-        readonly string _s;
-        int _i;
-
-        public JsonReader(string s)
-        {
-            _s = s;
-            _i = 0;
-        }
-
-        public object ReadValue()
-        {
-            SkipWhitespace();
-            if (_i >= _s.Length)
-            {
-                return null;
-            }
-
-            char c = _s[_i];
-            if (c == '"')
-            {
-                return ReadString();
-            }
-
-            if (c == '{')
-            {
-                return ReadObject();
-            }
-
-            if (c == '[')
-            {
-                return ReadArray();
-            }
-
-            if (c == 't' || c == 'f')
-            {
-                return ReadBool();
-            }
-
-            if (c == 'n')
-            {
-                ReadNull();
-                return null;
-            }
-
-            if (c == '-' || (c >= '0' && c <= '9'))
-            {
-                return ReadNumber();
-            }
-
-            return null;
-        }
-
-        string ReadString()
-        {
-            _i++;
-            var sb = new StringBuilder();
-            while (_i < _s.Length)
-            {
-                char c = _s[_i];
-                if (c == '\\')
-                {
-                    _i++;
-                    if (_i >= _s.Length)
-                    {
-                        break;
-                    }
-
-                    char esc = _s[_i];
-                    switch (esc)
-                    {
-                        case '"':  sb.Append('"'); break;
-                        case '\\': sb.Append('\\'); break;
-                        case '/':  sb.Append('/'); break;
-                        case 'b':  sb.Append('\b'); break;
-                        case 'f':  sb.Append('\f'); break;
-                        case 'n':  sb.Append('\n'); break;
-                        case 'r':  sb.Append('\r'); break;
-                        case 't':  sb.Append('\t'); break;
-                        case 'u':
-                            if (_i + 4 < _s.Length)
-                            {
-                                string hex = _s.Substring(_i + 1, 4);
-                                sb.Append((char)Convert.ToInt32(hex, 16));
-                                _i += 4;
-                            }
-
-                            break;
-                        default: sb.Append(esc); break;
-                    }
-                }
-                else if (c == '"')
-                {
-                    _i++;
-                    return sb.ToString();
-                }
-                else
-                {
-                    sb.Append(c);
-                }
-
-                _i++;
-            }
-
-            return sb.ToString();
-        }
-
-        JsonObject ReadObject()
-        {
-            _i++;
-            var obj = new JsonObject();
-            SkipWhitespace();
-            if (_i < _s.Length && _s[_i] == '}')
-            {
-                _i++;
-                return obj;
-            }
-
-            while (_i < _s.Length)
-            {
-                SkipWhitespace();
-                if (_i >= _s.Length)
-                {
-                    break;
-                }
-
-                string key = ReadString();
-                SkipWhitespace();
-                if (_i < _s.Length && _s[_i] == ':')
-                {
-                    _i++;
-                }
-
-                object value = ReadValue();
-                obj.Set(key, value);
-                SkipWhitespace();
-                if (_i < _s.Length && _s[_i] == ',')
-                {
-                    _i++;
-                }
-                else if (_i < _s.Length && _s[_i] == '}')
-                {
-                    _i++;
-                    break;
-                }
-            }
-
-            return obj;
-        }
-
-        List<object> ReadArray()
-        {
-            _i++;
-            var list = new List<object>();
-            SkipWhitespace();
-            if (_i < _s.Length && _s[_i] == ']')
-            {
-                _i++;
-                return list;
-            }
-
-            while (_i < _s.Length)
-            {
-                list.Add(ReadValue());
-                SkipWhitespace();
-                if (_i < _s.Length && _s[_i] == ',')
-                {
-                    _i++;
-                }
-                else if (_i < _s.Length && _s[_i] == ']')
-                {
-                    _i++;
-                    break;
-                }
-            }
-
-            return list;
-        }
-
-        bool ReadBool()
-        {
-            if (_s.Length - _i >= 4 && _s[_i] == 't' && _s[_i + 1] == 'r' && _s[_i + 2] == 'u' && _s[_i + 3] == 'e')
-            {
-                _i += 4;
-                return true;
-            }
-
-            if (_s.Length - _i >= 5 && _s[_i] == 'f' && _s[_i + 1] == 'a' && _s[_i + 2] == 'l' && _s[_i + 3] == 's' && _s[_i + 4] == 'e')
-            {
-                _i += 5;
-            }
-
-            return false;
-        }
-
-        void ReadNull()
-        {
-            if (_s.Length - _i >= 4 && _s[_i] == 'n' && _s[_i + 1] == 'u' && _s[_i + 2] == 'l' && _s[_i + 3] == 'l')
-            {
-                _i += 4;
-            }
-        }
-
-        object ReadNumber()
-        {
-            int start = _i;
-            if (_i < _s.Length && _s[_i] == '-')
-            {
-                _i++;
-            }
-
-            while (_i < _s.Length && _s[_i] >= '0' && _s[_i] <= '9')
-            {
-                _i++;
-            }
-
-            bool isFloat = false;
-            if (_i < _s.Length && _s[_i] == '.')
-            {
-                isFloat = true;
-                _i++;
-                while (_i < _s.Length && _s[_i] >= '0' && _s[_i] <= '9')
-                {
-                    _i++;
-                }
-            }
-
-            if (_i < _s.Length && (_s[_i] == 'e' || _s[_i] == 'E'))
-            {
-                isFloat = true;
-                _i++;
-                if (_i < _s.Length && (_s[_i] == '+' || _s[_i] == '-'))
-                {
-                    _i++;
-                }
-
-                while (_i < _s.Length && _s[_i] >= '0' && _s[_i] <= '9')
-                {
-                    _i++;
-                }
-            }
-
-            string numStr = _s.Substring(start, _i - start);
-            if (isFloat)
-            {
-                return double.TryParse(numStr, System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out double d) ? d : 0.0;
-            }
-
-            return long.TryParse(numStr, out long n) ? n : 0L;
-        }
-
-        void SkipWhitespace()
-        {
-            while (_i < _s.Length && char.IsWhiteSpace(_s[_i]))
-            {
-                _i++;
-            }
-        }
-    }
-
-    sealed class JsonObject
-    {
-        readonly Dictionary<string, object> _data = new Dictionary<string, object>();
-
-        public void Set(string key, object value)
-        {
-            _data[key] = value;
-        }
-
-        public string GetString(string key, string fallback = "")
-        {
-            if (_data.TryGetValue(key, out object val) && val is string s)
-            {
-                return s;
-            }
-
-            return fallback;
-        }
-
-        public JsonObject GetObject(string key)
-        {
-            if (_data.TryGetValue(key, out object val) && val is JsonObject obj)
-            {
-                return obj;
-            }
-
-            return null;
-        }
-
-        public List<object> GetArray(string key)
-        {
-            if (_data.TryGetValue(key, out object val) && val is List<object> list)
-            {
-                return list;
-            }
-
-            return null;
-        }
-    }
-
-    #endregion
-
-    #region JSON Escape — for building request body
-
-    static string EscapeJson(string s)
-    {
-        if (string.IsNullOrEmpty(s))
+        if (string.IsNullOrWhiteSpace(json))
         {
             return "";
         }
 
-        var sb = new StringBuilder(s.Length + 16);
-        foreach (char c in s)
+        try
         {
+            ResponsePayload response = JsonUtility.FromJson<ResponsePayload>(json);
+            string reply = response?.choices != null && response.choices.Length > 0
+                ? response.choices[0]?.message?.content
+                : null;
+
+            if (!string.IsNullOrWhiteSpace(reply))
+            {
+                return reply.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(response?.error?.message))
+            {
+                return $"[API ERROR] {response.error.message}";
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[GLMAgent] Parse error: {e}");
+        }
+        return "[ERROR] Failed to parse API response JSON.";
+    }
+
+    static string ExtractErrorMessage(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return "";
+        }
+
+        try
+        {
+            ResponsePayload response = JsonUtility.FromJson<ResponsePayload>(json);
+            if (!string.IsNullOrWhiteSpace(response?.error?.message))
+            {
+                return response.error.message;
+            }
+        }
+        catch
+        {
+        }
+
+        return json.Length > 180 ? json.Substring(0, 180) : json;
+    }
+
+    static void AppendMessageJson(StringBuilder sb, string role, string content)
+    {
+        sb.Append("{\"role\":\"");
+        sb.Append(EscapeJson(role));
+        sb.Append("\",\"content\":\"");
+        sb.Append(EscapeJson(content));
+        sb.Append("\"}");
+    }
+
+    static string EscapeJson(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
+
+        var sb = new StringBuilder(value.Length + 16);
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
             switch (c)
             {
-                case '"':  sb.Append("\\\""); break;
-                case '\\': sb.Append("\\\\"); break;
-                case '\b': sb.Append("\\b"); break;
-                case '\f': sb.Append("\\f"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case '\t': sb.Append("\\t"); break;
+                case '"':
+                    sb.Append("\\\"");
+                    break;
+                case '\\':
+                    sb.Append("\\\\");
+                    break;
+                case '\b':
+                    sb.Append("\\b");
+                    break;
+                case '\f':
+                    sb.Append("\\f");
+                    break;
+                case '\n':
+                    sb.Append("\\n");
+                    break;
+                case '\r':
+                    sb.Append("\\r");
+                    break;
+                case '\t':
+                    sb.Append("\\t");
+                    break;
                 default:
                     if (c < 0x20)
                     {
-                        sb.Append($"\\u{(int)c:X4}");
+                        sb.Append("\\u");
+                        sb.Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
                     }
                     else
                     {
                         sb.Append(c);
                     }
-
                     break;
             }
         }
@@ -528,5 +258,105 @@ public class GLMAgent : MonoBehaviour
         return sb.ToString();
     }
 
-    #endregion
+    bool HasApiKey()
+    {
+        return !string.IsNullOrWhiteSpace(_resolvedApiKey) && _resolvedApiKey != "YOUR_API_KEY_HERE";
+    }
+
+    string ResolveApiKey()
+    {
+        for (int i = 0; i < ApiKeyEnvironmentVariables.Length; i++)
+        {
+            string value = Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariables[i]);
+            if (IsUsableApiKey(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+        if (!string.IsNullOrEmpty(projectRoot))
+        {
+            string keyPath = Path.Combine(projectRoot, LocalSecretRelativePath);
+            if (File.Exists(keyPath))
+            {
+                string value = File.ReadAllText(keyPath);
+                if (IsUsableApiKey(value))
+                {
+                    return value.Trim();
+                }
+            }
+        }
+
+        if (IsUsableApiKey(apiKey))
+        {
+            return apiKey.Trim();
+        }
+
+        return "";
+    }
+
+    static bool IsUsableApiKey(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value) && value.Trim() != "YOUR_API_KEY_HERE";
+    }
+
+    void RemoveLastUserMessage()
+    {
+        for (int i = _history.Count - 1; i >= 0; i--)
+        {
+            if (_history[i].role == "user")
+            {
+                _history.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    [Serializable]
+    sealed class RequestPayload
+    {
+        public string model;
+        public List<MessagePayload> messages;
+        public float temperature;
+        public int max_tokens;
+    }
+
+    [Serializable]
+    sealed class ResponsePayload
+    {
+        public ChoicePayload[] choices;
+        public ErrorPayload error;
+    }
+
+    [Serializable]
+    sealed class ChoicePayload
+    {
+        public MessagePayload message;
+    }
+
+    [Serializable]
+    sealed class ErrorPayload
+    {
+        public string message;
+        public string type;
+        public string code;
+    }
+
+    [Serializable]
+    sealed class MessagePayload
+    {
+        public string role;
+        public string content;
+
+        public MessagePayload()
+        {
+        }
+
+        public MessagePayload(string role, string content)
+        {
+            this.role = role;
+            this.content = content;
+        }
+    }
 }

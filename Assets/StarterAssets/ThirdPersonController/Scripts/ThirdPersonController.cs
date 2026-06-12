@@ -71,6 +71,12 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition = false;
 
+        [Tooltip("Invert horizontal camera look input")]
+        public bool InvertLookX = false;
+
+        [Tooltip("Invert vertical camera look input")]
+        public bool InvertLookY = false;
+
         private float _cinemachineTargetYaw;
         private float _cinemachineTargetPitch;
         private float _speed;
@@ -90,6 +96,7 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
         private InputAction _moveAction;
+        private InputAction _sprintAction;
 #endif
         private Animator _animator;
         private CharacterController _controller;
@@ -129,6 +136,7 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM
             _playerInput = GetComponent<PlayerInput>();
             _moveAction = _playerInput.actions.FindAction("Move", true);
+            _sprintAction = _playerInput.actions.FindAction("Sprint", true);
 #else
             Debug.LogError("Starter Assets package requires the Input System package.");
 #endif
@@ -146,6 +154,11 @@ namespace StarterAssets
             if (_moveAction != null)
             {
                 _input.MoveInput(_moveAction.ReadValue<Vector2>());
+            }
+
+            if (_sprintAction != null)
+            {
+                _input.SprintInput(_sprintAction.IsPressed());
             }
 #endif
             GroundedCheck();
@@ -194,9 +207,11 @@ namespace StarterAssets
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
             {
                 float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
+                float lookX = InvertLookX ? -_input.look.x : _input.look.x;
+                float lookY = InvertLookY ? _input.look.y : -_input.look.y;
 
-                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
-                _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
+                _cinemachineTargetYaw += lookX * deltaTimeMultiplier;
+                _cinemachineTargetPitch += lookY * deltaTimeMultiplier;
             }
 
             _cinemachineTargetYaw = ClampAngle(_cinemachineTargetYaw, float.MinValue, float.MaxValue);

@@ -82,7 +82,8 @@ public class MainQuestManager : MonoBehaviour
             TargetObjectName = string.Empty,
             GuideSteps = new[]
             {
-                "前往 Crystal 区域",
+                "打开地图(Tab)",
+                "前往 Moon Crystal 标记",
                 "寻找漂浮 Crystal",
                 "靠近后按 E",
                 "累计获得 200 MOON"
@@ -351,6 +352,8 @@ public class MainQuestManager : MonoBehaviour
         {
             case MainQuestStep.VisitBlueDao:
                 return QuestSignals.BlueDaoVisited
+                    || DAOIntroCard.HasSeen(DAOIntroCard.Kind.Blue)
+                    || (reputation != null && reputation.HasClaimedBlueDaoReputation)
                     || (tokens != null && tokens.HasClaimedRedDaoStele);
 
             case MainQuestStep.VisitRedDao:
@@ -559,7 +562,7 @@ public class MainQuestManager : MonoBehaviour
         snapshot.Title = step.Title;
         snapshot.StepsText = FormatGuideSteps(index, true);
         snapshot.NextActionText = GetQuestNextAction(index);
-        snapshot.DistanceText = distance >= 0f ? $"距离：{Mathf.RoundToInt(distance)}m" : string.Empty;
+        snapshot.DistanceText = distance >= 0f ? $"Distance: {Mathf.RoundToInt(distance)}m" : string.Empty;
         return snapshot;
     }
 
@@ -634,7 +637,7 @@ public class MainQuestManager : MonoBehaviour
         StringBuilder builder = new StringBuilder();
         if (includeHeader)
         {
-            builder.AppendLine("【完成步骤】");
+            builder.AppendLine("[Steps]");
         }
 
         for (int i = 0; i < steps.Length; i++)
@@ -675,7 +678,7 @@ public class MainQuestManager : MonoBehaviour
             case MainQuestStep.CollectMoon:
                 if (steps.Length > 3)
                 {
-                    steps[3] = $"累计获得 {RequiredMoon} MOON（当前 {moon}）";
+                    steps[3] = $"Collect {RequiredMoon} MOON (current {moon})";
                 }
 
                 break;
@@ -683,7 +686,7 @@ public class MainQuestManager : MonoBehaviour
             case MainQuestStep.BuildReputation:
                 if (steps.Length > 2)
                 {
-                    steps[2] = $"累计 REP ≥ {RequiredReputation}（当前 {rep}）";
+                    steps[2] = $"Reach REP {RequiredReputation} (current {rep})";
                 }
 
                 break;
@@ -691,8 +694,8 @@ public class MainQuestManager : MonoBehaviour
             case MainQuestStep.JoinGreenDao:
                 if (steps.Length > 1)
                 {
-                    steps[0] = $"确保 REP ≥ {RequiredReputation}（当前 {rep}）";
-                    steps[1] = $"确保 MOON ≥ {RequiredMoon}（当前 {moon}）";
+                    steps[0] = $"Prepare REP {rep}/{RequiredReputation}";
+                    steps[1] = $"Prepare MOON {moon}/{RequiredMoon}";
                 }
 
                 break;
@@ -716,67 +719,67 @@ public class MainQuestManager : MonoBehaviour
                 {
                     if (blueDistance > MapHintDistance)
                     {
-                        return "打开地图(Tab)，寻找蓝色区域";
+                        return "Open the map (Tab) and head to Blue DAO.";
                     }
 
                     if (blueDistance > SteleInteractDistance)
                     {
-                        return "靠近 Blue DAO 石碑";
+                        return "Approach the Blue DAO stele.";
                     }
                 }
 
-                return "按 E 进行交互";
+                return "Press E to interact with Blue DAO.";
 
             case MainQuestStep.VisitRedDao:
                 if (TryGetObjectDistance("RedDAO_Core", out float redDistance))
                 {
                     if (redDistance > MapHintDistance)
                     {
-                        return "打开地图(Tab)，寻找红色区域";
+                        return "Open the map (Tab) and head to Red DAO.";
                     }
 
                     if (redDistance > SteleInteractDistance)
                     {
-                        return "靠近 Red DAO 石碑";
+                        return "Approach the Red DAO stele.";
                     }
                 }
 
-                return "按 E 获得 100 MOON";
+                return "Press E to claim 100 MOON.";
 
             case MainQuestStep.CollectMoon:
                 if (moon >= RequiredMoon)
                 {
-                    return "MOON 已达标，继续推进主线";
+                    return "MOON target reached. Continue the main quest.";
                 }
 
                 if (TryGetNearestMoonCrystalDistance(out float crystalDistance))
                 {
                     if (crystalDistance > MapHintDistance)
                     {
-                        return "前往 Crystal 区域，寻找漂浮 Crystal";
+                        return "Open the map (Tab) and head to the Moon Crystal marker.";
                     }
 
                     if (crystalDistance > CrystalInteractDistance)
                     {
-                        return "靠近 Crystal 后按 E 收集";
+                        return "Approach a Moon Crystal, then press E.";
                     }
 
-                    return "按 E 收集 Crystal";
+                    return "Press E to collect the Moon Crystal.";
                 }
 
-                return $"继续收集 MOON（当前 {moon}/{RequiredMoon}）";
+                return $"Collect more MOON ({moon}/{RequiredMoon}).";
 
             case MainQuestStep.BuildReputation:
                 if (rep >= RequiredReputation)
                 {
-                    return "前往 Green DAO 申请 Green Pass";
+                    return "Go to Green DAO and apply for Green Pass.";
                 }
 
                 if (reputation != null && !reputation.HasClaimedBlueDaoReputation
                     && TryGetObjectDistance("BlueDAO_Core", out float blueRepDistance)
                     && blueRepDistance <= ApproachDistance)
                 {
-                    return "在 Blue DAO 按 E 获得信誉";
+                    return "Press E at Blue DAO to gain Reputation.";
                 }
 
                 if (tokens != null && tokens.HasClaimedRedDaoStele
@@ -785,91 +788,91 @@ public class MainQuestManager : MonoBehaviour
                     && TryGetObjectDistance("RedDAO_Core", out float redRepDistance)
                     && redRepDistance <= ApproachDistance)
                 {
-                    return "在 Red DAO 按 E 捐赠获得信誉";
+                    return "Press E at Red DAO to donate MOON for Reputation.";
                 }
 
-                return $"积累信誉（当前 REP {rep}/{RequiredReputation}）";
+                return $"Build Reputation ({rep}/{RequiredReputation}). Blue DAO or Red DAO can help.";
 
             case MainQuestStep.JoinGreenDao:
                 if (passes != null && passes.HasGreenPass)
                 {
-                    return "Green Pass 已获得";
+                    return "Green Pass acquired.";
                 }
 
                 if (rep < RequiredReputation)
                 {
-                    return $"提升 REP 至 {RequiredReputation}（当前 {rep}）";
+                    return $"Raise REP to {RequiredReputation} (current {rep}).";
                 }
 
                 if (moon < RequiredMoon)
                 {
-                    return $"收集 MOON 至 {RequiredMoon}（当前 {moon}）";
+                    return $"Collect MOON to {RequiredMoon} (current {moon}).";
                 }
 
                 if (TryGetObjectDistance("GreenDAO_EntryZone", out float entryDistance)
                     && entryDistance <= ApproachDistance)
                 {
-                    return "进入绿色区域，自动获得 Green Pass";
+                    return "Enter the green zone to receive Green Pass.";
                 }
 
                 if (TryGetObjectDistance("GreenDAO_Core", out float greenDistance))
                 {
                     if (greenDistance > MapHintDistance)
                     {
-                        return "打开地图，前往 Green DAO";
+                        return "Open the map and head to Green DAO.";
                     }
 
-                    return "进入 Green DAO 绿色区域";
+                    return "Enter the Green DAO access zone.";
                 }
 
-                return "前往 Green DAO";
+                return "Go to Green DAO.";
 
             case MainQuestStep.GoToBoundary:
                 if (QuestSignals.BoundaryLoreComplete)
                 {
-                    return "已阅读边界说明，前往创建文明";
+                    return "Boundary message read. Go create your civilization.";
                 }
 
                 if (passes == null || !passes.HasGreenPass)
                 {
-                    return "先获得 Green Pass";
+                    return "Get Green Pass first.";
                 }
 
                 if (TryGetObjectDistance("BoundaryStone", out float boundaryDistance))
                 {
                     if (boundaryDistance > MapHintDistance)
                     {
-                        return "打开地图，寻找 Boundary Stone";
+                        return "Open the map and find Boundary Stone.";
                     }
 
                     if (boundaryDistance > BoundaryTriggerDistance)
                     {
-                        return "进入边界区域";
+                        return "Enter the boundary zone.";
                     }
                 }
 
-                return "按 E 阅读文明创建说明";
+                return "Press E to read the civilization boundary message.";
 
             case MainQuestStep.CreateCivilization:
                 if (CivilizationManager.HasSelectedCivilization)
                 {
-                    return "文明已创建";
+                    return "Civilization created.";
                 }
 
                 if (TryGetObjectDistance("CivilizationSeed", out float seedDistance))
                 {
                     if (seedDistance > MapHintDistance)
                     {
-                        return "前往 Civilization Seed";
+                        return "Go to Civilization Seed.";
                     }
 
                     if (seedDistance > SeedInteractDistance)
                     {
-                        return "靠近 Civilization Seed";
+                        return "Approach the Civilization Seed.";
                     }
                 }
 
-                return "按 E 打开规则面板并创建文明";
+                return "Press E to open the rule panel and create civilization.";
 
             default:
                 return string.Empty;

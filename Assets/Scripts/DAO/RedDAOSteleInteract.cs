@@ -4,33 +4,35 @@ using UnityEngine.InputSystem;
 #endif
 
 /// <summary>
-/// Red DAO central stele: first E grants 100 MOON once; after that, donate 50 MOON for 20 Reputation once.
+/// Red DAO central stele: first E grants 100 MOON once; after that,
+/// donate 50 MOON for Reputation once.
 /// </summary>
 public class RedDAOSteleInteract : MonoBehaviour
 {
     [SerializeField] float interactRadius = 14f;
-    [SerializeField] string welcomeMessage = "欢迎来到 Red DAO";
+    [SerializeField] string welcomeMessage = "Welcome to Red DAO";
     [SerializeField] int moonReward = 100;
     [SerializeField] int donationMoonCost = 50;
     [SerializeField] int donationReputationReward = 20;
-    [SerializeField] string donationMessageLine1 = "你资助了贸易文明。";
+    [SerializeField] string donationMessageLine1 = "You funded a trade civilization.";
     [SerializeField] string donationMessageLine2 = "Reputation +20";
     [SerializeField] float rewardPopupDuration = 2.5f;
 
-
     Transform _player;
     bool _playerNear;
-    bool _wasPlayerNear;
     bool _showingIntro;
     float _rewardPopupTimer;
 
     GUIStyle _rewardStyle;
     bool _rewardStyleReady;
 
-    bool _wasShowingIntro;
-
     static bool WasEPressedThisFrame()
     {
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return false;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
 #else
@@ -40,11 +42,16 @@ public class RedDAOSteleInteract : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("[DAO DEBUG] Start OK RedDAO");
-
         GroundSnapUtility.SnapTransform(transform, 0f);
+        LandmarkVisualFactory.ApplyDaoSanctuary(
+            gameObject,
+            "RedDAO",
+            new Color(1f, 0.42f, 0.26f),
+            new Color(0.82f, 0.68f, 0.56f));
         VisualHierarchyOptions options = VisualHierarchyOptions.ForInteractive("RED DAO", new Color(1f, 0.62f, 0.38f));
         options.EnableFloat = false;
+        options.EnableParticles = false;
+        options.EnableGlowRing = false;
         options.LabelHeight = 5.5f;
         VisualHierarchy.Apply(gameObject, VisualHierarchyTier.Interactive, options);
 
@@ -52,15 +59,6 @@ public class RedDAOSteleInteract : MonoBehaviour
         if (player != null)
         {
             _player = player.transform;
-        }
-
-        if (_player == null)
-        {
-            Debug.LogError("[DAO DEBUG] Player NULL RedDAO");
-        }
-        else
-        {
-            Debug.Log("[DAO DEBUG] Player Found: " + _player.name + " RedDAO");
         }
     }
 
@@ -74,22 +72,9 @@ public class RedDAOSteleInteract : MonoBehaviour
         float distance = Vector3.Distance(_player.position, transform.position);
         _playerNear = distance <= interactRadius;
 
-        if (_playerNear != _wasPlayerNear)
-        {
-            Debug.Log(_playerNear ? "[DAO DEBUG] Near=True RedDAO" : "[DAO DEBUG] Near=False RedDAO");
-        }
-
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"[DAO DEBUG] RedDAO PlayerPos={_player.position} DaoPos={transform.position} Distance={distance:F1} Radius={interactRadius}");
-        }
-
-        _wasPlayerNear = _playerNear;
-
         if (!_playerNear)
         {
             _showingIntro = false;
-            _wasShowingIntro = false;
             HUDPromptChannel.Clear(this);
             return;
         }
@@ -98,22 +83,8 @@ public class RedDAOSteleInteract : MonoBehaviour
         {
             _showingIntro = true;
         }
-
-        if (_showingIntro && !_wasShowingIntro)
-        {
-            Debug.Log("[DAO DEBUG] Intro Active RedDAO");
-        }
-
-        _wasShowingIntro = _showingIntro;
-
         if (_showingIntro)
         {
-            if (WasEPressedThisFrame())
-            {
-                Debug.Log("[DAO DEBUG] E Pressed RedDAO");
-                Debug.Log("[DAO DEBUG] E Consumed By Intro RedDAO");
-            }
-
             DAOIntroCard.TryDismissOnInteract(DAOIntroCard.Kind.Red, ref _showingIntro);
             return;
         }
@@ -125,8 +96,6 @@ public class RedDAOSteleInteract : MonoBehaviour
 
         if (WasEPressedThisFrame())
         {
-            Debug.Log("[DAO DEBUG] E Pressed RedDAO");
-            Debug.Log("[DAO DEBUG] HandleInteract RedDAO");
             HandleInteract();
         }
     }
@@ -145,12 +114,38 @@ public class RedDAOSteleInteract : MonoBehaviour
             return;
         }
 
-        TokenManager tokens = TokenManager.Instance;
-        bool initialClaimed = tokens != null && tokens.HasClaimedRedDaoStele;
-        string line1 = initialClaimed ? "奖励已领取" : welcomeMessage;
-        string line2 = initialClaimed ? "当前DAO暂无更多任务" : "按 E 获得 100 MOON";
+        GetHudLines(out string line1, out string line2);
         float priority = -Vector3.Distance(_player.position, transform.position);
         HUDPromptChannel.Set(this, line1, line2, priority);
+    }
+
+    void GetHudLines(out string line1, out string line2)
+    {
+        TokenManager tokens = TokenManager.Instance;
+        ReputationManager reputation = ReputationManager.Instance;
+
+        bool initialClaimed = tokens != null && tokens.HasClaimedRedDaoStele;
+        bool donated = reputation != null && reputation.HasDonatedRedDao;
+        int moon = tokens != null ? tokens.MoonBalance : 0;
+
+        if (!initialClaimed)
+        {
+            line1 = welcomeMessage;
+            line2 = $"Press E to claim {moonReward} MOON";
+            return;
+        }
+
+        if (donated)
+        {
+            line1 = "Red DAO donation complete";
+            line2 = "Your trade contribution is recorded.";
+            return;
+        }
+
+        line1 = "Red DAO trade pledge";
+        line2 = moon >= donationMoonCost
+            ? $"Press E to donate {donationMoonCost} MOON for Reputation"
+            : $"Need {donationMoonCost} MOON to donate (current {moon})";
     }
 
     void HandleInteract()
@@ -186,11 +181,13 @@ public class RedDAOSteleInteract : MonoBehaviour
 
         if (reputation.HasDonatedRedDao)
         {
+            reputation.ShowReputationPopup("Red DAO donation complete", "This reward has already been claimed.");
             return;
         }
 
         if (tokens.MoonBalance < donationMoonCost)
         {
+            tokens.ShowRewardPopup($"Need {donationMoonCost} MOON to donate", 2f);
             return;
         }
 
@@ -202,12 +199,11 @@ public class RedDAOSteleInteract : MonoBehaviour
         int reputationReward = CivilizationManager.HasSelectedCivilization
             ? CivilizationBonuses.GetRedDonationReputationReward(CivilizationManager.selectedCivilizationType)
             : donationReputationReward;
-        string reputationLine2 = $"Reputation +{reputationReward}";
 
         reputation.TryClaimRedDaoDonationReputation(
             reputationReward,
             donationMessageLine1,
-            reputationLine2);
+            $"Reputation +{reputationReward}");
     }
 
     void OnGUI()

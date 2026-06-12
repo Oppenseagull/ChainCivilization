@@ -27,6 +27,7 @@ public struct VisualHierarchyOptions
     public bool EnableParticles;
     public bool EnableFloat;
     public bool EnableSpin;
+    public bool EnableGlowRing;
 
     public static VisualHierarchyOptions ForInteractive(string label, Color accent)
     {
@@ -40,7 +41,8 @@ public struct VisualHierarchyOptions
             LabelHeight = 2.4f,
             EnableParticles = true,
             EnableFloat = true,
-            EnableSpin = true
+            EnableSpin = true,
+            EnableGlowRing = true
         };
     }
 
@@ -153,7 +155,18 @@ public static class VisualHierarchy
             CreateFloatingLabel(fxRoot, options.LabelText, options.AccentColor, options.LabelHeight);
         }
 
-        CreateGlowRing(fxRoot, options.AccentColor, VisualHierarchyTier.Interactive);
+        if (options.EnableGlowRing)
+        {
+            CreateGlowRing(fxRoot, options.AccentColor, VisualHierarchyTier.Interactive);
+        }
+        else
+        {
+            Transform existingRing = fxRoot.Find("GlowRing");
+            if (existingRing != null)
+            {
+                Object.Destroy(existingRing.gameObject);
+            }
+        }
     }
 
     static Transform EnsureFxRoot(GameObject root)

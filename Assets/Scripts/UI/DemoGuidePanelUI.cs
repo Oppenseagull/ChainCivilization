@@ -61,6 +61,11 @@ public class DemoGuidePanelUI : MonoBehaviour
             return;
         }
 
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
         {

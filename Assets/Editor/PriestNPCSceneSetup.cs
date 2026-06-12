@@ -1,9 +1,13 @@
-using TMPro;
+﻿using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem.UI;
+#endif
 
 public static class PriestNPCSceneSetup
 {
@@ -31,7 +35,7 @@ public static class PriestNPCSceneSetup
 
         var npcSO = new SerializedObject(agentNPC);
         npcSO.FindProperty("interactRadius").floatValue = 6f;
-        npcSO.FindProperty("npcName").stringValue = "大祭司";
+        npcSO.FindProperty("npcName").stringValue = "\u5927\u796d\u53f8";
         npcSO.ApplyModifiedPropertiesWithoutUndo();
 
         var visual = new GameObject("Visual");
@@ -86,7 +90,7 @@ public static class PriestNPCSceneSetup
         var panelRoot = CreatePanel(canvasGo.transform, "PanelRoot", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 480), new Color(0.06f, 0.08f, 0.15f, 0.95f));
 
         var titleBar = CreatePanel(panelRoot.transform, "TitleBar", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0, 40), new Color(0.1f, 0.12f, 0.25f, 1f));
-        var titleText = CreateTMP(titleBar.transform, "TitleText", "与大祭司对话", 20, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
+        var titleText = CreateTMP(titleBar.transform, "TitleText", "\u4e0e\u5927\u796d\u53f8\u5bf9\u8bdd", 20, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
         Stretch(titleText.rectTransform, 0, 0, 0, 0);
 
         var chatLogGo = new GameObject("ChatLog", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
@@ -115,7 +119,7 @@ public static class PriestNPCSceneSetup
         textArea.transform.SetParent(inputGo.transform, false);
         Stretch(textArea.GetComponent<RectTransform>(), 8, 4, 8, 4);
 
-        var placeholder = CreateTMP(textArea.transform, "Placeholder", "向大祭司提问...", 18, TextAlignmentOptions.Left, new Color(0.5f, 0.55f, 0.65f), FontStyles.Italic);
+        var placeholder = CreateTMP(textArea.transform, "Placeholder", "\u5411\u5927\u796d\u53f8\u63d0\u95ee...", 18, TextAlignmentOptions.Left, new Color(0.5f, 0.55f, 0.65f), FontStyles.Italic);
         Stretch(placeholder.rectTransform, 0, 0, 0, 0);
         var inputText = CreateTMP(textArea.transform, "Text", "", 18, TextAlignmentOptions.Left, Color.white);
         Stretch(inputText.rectTransform, 0, 0, 0, 0);
@@ -136,10 +140,10 @@ public static class PriestNPCSceneSetup
         sendRt.sizeDelta = new Vector2(80, 36);
         sendBtnGo.GetComponent<Image>().color = new Color(0.25f, 0.35f, 0.65f, 1f);
         var sendBtn = sendBtnGo.GetComponent<Button>();
-        var sendLabel = CreateTMP(sendBtnGo.transform, "Text", "发送", 16, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
+        var sendLabel = CreateTMP(sendBtnGo.transform, "Text", "\u53d1\u9001", 16, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
         Stretch(sendLabel.rectTransform, 0, 0, 0, 0);
 
-        var closeHint = CreateTMP(panelRoot.transform, "CloseHint", "ESC 关闭", 12, TextAlignmentOptions.TopRight, new Color(0.65f, 0.7f, 0.8f));
+        var closeHint = CreateTMP(panelRoot.transform, "CloseHint", "ESC \u5173\u95ed", 12, TextAlignmentOptions.TopRight, new Color(0.65f, 0.7f, 0.8f));
         var closeRt = closeHint.rectTransform;
         closeRt.anchorMin = new Vector2(1f, 1f);
         closeRt.anchorMax = new Vector2(1f, 1f);
@@ -175,11 +179,37 @@ public static class PriestNPCSceneSetup
 
     static void EnsureEventSystem()
     {
-        if (Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() != null)
-            return;
+        var eventSystem = Object.FindAnyObjectByType<EventSystem>();
+        if (eventSystem == null)
+        {
+            var eventSystemGo = new GameObject("EventSystem", typeof(EventSystem));
+            eventSystem = eventSystemGo.GetComponent<EventSystem>();
+            Debug.Log("[PriestNPCSceneSetup] Created EventSystem for UI input.");
+        }
 
-        new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-        Debug.Log("[PriestNPCSceneSetup] Created EventSystem for UI input.");
+#if ENABLE_INPUT_SYSTEM
+        var inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+        if (inputModule == null)
+        {
+            inputModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+        }
+
+        if (inputModule.actionsAsset == null)
+        {
+            inputModule.AssignDefaultActions();
+        }
+
+        var legacyModule = eventSystem.GetComponent<StandaloneInputModule>();
+        if (legacyModule != null)
+        {
+            Object.DestroyImmediate(legacyModule);
+        }
+#else
+        if (eventSystem.GetComponent<StandaloneInputModule>() == null)
+        {
+            eventSystem.gameObject.AddComponent<StandaloneInputModule>();
+        }
+#endif
     }
 
     static void EnsureTMPResources()

@@ -1,5 +1,3 @@
-using UnityEngine;
-
 /// <summary>
 /// Single source of truth for Green DAO access thresholds.
 /// </summary>
@@ -27,19 +25,19 @@ public static class DAORequirements
     {
         if (hasPass)
         {
-            line1 = "Green Pass 已获得";
-            line2 = "你已经拥有建立文明资格";
+            line1 = "Green Pass acquired";
+            line2 = "You can now reach the civilization boundary.";
             return;
         }
 
         if (MeetsGreenDaoAccess(moonBalance, reputation))
         {
-            line1 = "欢迎加入 Green DAO";
-            line2 = "进入区域即可获得 Green Pass";
+            line1 = "Green DAO accepts you";
+            line2 = "Enter the green zone to receive Green Pass.";
             return;
         }
 
-        line1 = $"需要：\nMOON >= {GreenDaoRequiredMoon}\nREP >= {GreenDaoRequiredReputation}";
-        line2 = $"当前：\nMOON {moonBalance}\nREP {reputation}";
+        line1 = $"Need: MOON {moonBalance}/{GreenDaoRequiredMoon}";
+        line2 = $"Need: REP {reputation}/{GreenDaoRequiredReputation}";
     }
 }

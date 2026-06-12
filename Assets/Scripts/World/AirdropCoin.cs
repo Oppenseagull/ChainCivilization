@@ -70,6 +70,11 @@ public class AirdropCoin : MonoBehaviour
             return;
         }
 
+        if (GameplayInputGate.BlocksGameplayShortcuts)
+        {
+            return;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
