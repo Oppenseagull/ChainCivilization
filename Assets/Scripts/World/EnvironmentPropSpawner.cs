@@ -32,7 +32,6 @@ public class EnvironmentPropSpawner : MonoBehaviour
     }
 
     [SerializeField] int randomSeed = 42857;
-    [SerializeField] bool spawnOnStart = true;
     [SerializeField] float minSpacing = 4.5f;
 
     [Header("Primitive Composition Counts")]
@@ -84,10 +83,8 @@ public class EnvironmentPropSpawner : MonoBehaviour
 
     void Start()
     {
-        if (spawnOnStart)
-        {
-            SpawnEnvironment();
-        }
+        ClearProps();
+        enabled = false;
     }
 
     [ContextMenu("Spawn Environment Props")]

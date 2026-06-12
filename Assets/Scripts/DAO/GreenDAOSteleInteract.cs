@@ -25,6 +25,7 @@ public class GreenDAOSteleInteract : MonoBehaviour
             new Color(0.62f, 0.78f, 0.62f));
         VisualHierarchyOptions options = VisualHierarchyOptions.ForInteractive("GREEN DAO", new Color(0.48f, 0.9f, 0.5f));
         options.EnableFloat = false;
+        options.EnableSpin = false;
         options.EnableParticles = false;
         options.EnableGlowRing = false;
         options.LabelHeight = 5.5f;
