@@ -2,10 +2,11 @@
 
 > **在遗忘之地苏醒，穿越三座 DAO 聚落，以 MOON 为血、以 Reputation 为信、以 Pass 为钥——在文明边界，铸造属于你的链上共识。**
 
-![Hackathon](https://img.shields.io/badge/Web3×AI-Hackathon-blue)
-![Unity](https://img.shields.io/badge/Unity-6-black)
-![GLM](https://img.shields.io/badge/GLM-Agent-green)
-![Status](https://img.shields.io/badge/Status-Demo-orange)
+[![Unity](https://img.shields.io/badge/Unity-6000.4.10f1-000000?logo=unity&logoColor=white)](https://unity.com/)
+[![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
+[![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+[![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
+[![GLM](https://img.shields.io/badge/AI-GLM--4--Flash-FF6B35)](https://open.bigmodel.cn/)
 
 ---
 
@@ -44,12 +45,6 @@
 ## ✨ 一句话介绍
 
 **Chain Civilization: Genesis** 是一款第三人称开放世界 Web3 教育游戏原型——玩家在 Unity 构建的「链上文明实验场」中，通过探索、交互与 AI 对话，亲手走完 **Token → Reputation → DAO Pass → Civilization** 的完整文明演化路径。
-
-[![Unity](https://img.shields.io/badge/Unity-6000.4.10f1-000000?logo=unity&logoColor=white)](https://unity.com/)
-[![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
-[![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
-[![GLM](https://img.shields.io/badge/AI-GLM--5.1-FF6B35)](https://open.bigmodel.cn/)
 
 ---
 
