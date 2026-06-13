@@ -1,12 +1,22 @@
 # 🌙 Chain Civilization: Genesis
 
-> **在遗忘之地苏醒，穿越三座 DAO 聚落，以 MOON 为血、以 Reputation 为信、以 Pass 为钥——在文明边界，铸造属于你的链上共识。**
+> 在共识诞生之前，文明尚未拥有名字。
+
+你从遗忘之地苏醒。
+
+穿越三个理念迥异的 DAO 聚落，收集散落的文明资源，赢得信任与凭证。
+
+当你抵达世界边界时，将获得建立新文明的资格。
+
+在这里，Token 是贡献的记录，Reputation 是信任的证明，而文明，则是人们共同遵守的规则。
+
+与大祭司对话，探索 Web3 世界背后的哲学与秩序。
 
 [![Unity](https://img.shields.io/badge/Unity-6000.4.10f1-000000?logo=unity&logoColor=white)](https://unity.com/)
 [![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
 [![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
-[![GLM](https://img.shields.io/badge/AI-GLM--4--Flash-FF6B35)](https://open.bigmodel.cn/)
+[![GLM](https://img.shields.io/badge/AI-GLM--5.1-FF6B35)](https://open.bigmodel.cn/)
 
 ---
 
@@ -24,7 +34,7 @@
 
 👉 **[▶ Watch on Bilibili](https://b23.tv/egT1Rci)**
 
-> 建议评委优先观看 Demo 视频（≈ 2 分钟），快速了解完整玩法闭环。
+> 建议评委优先观看 Demo 视频（≈ 3 分钟），快速了解完整玩法闭环。
 
 ---
 
