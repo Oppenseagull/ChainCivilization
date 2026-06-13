@@ -428,13 +428,38 @@ LocalSecrets/zhipu_api_key.txt
 
 ---
 
-## 👥 团队成员
+## 👥 Team
 
-| 成员 | 角色 | 联系 |
-|------|------|------|
-| **Oppenseagull** | 项目负责人 · 全栈开发 · 游戏设计 | [GitHub](https://github.com/Oppenseagull) |
+### Qsa3Ger
+**Project Lead · Full-Stack Developer · Game Designer**
 
-> 本项目为黑客松期间快速迭代产物，欢迎 Issue 与 PR。
+Responsibilities:
+- Project vision and roadmap
+- Game design and worldbuilding
+- Web3 civilization concept design
+- Gameplay system planning
+- Unity implementation
+- AI Agent integration
+- Overall project management
+
+GitHub: [https://github.com/Qsa3Ger](https://github.com/Qsa3Ger)
+
+---
+
+### Oppenseagull
+**Full-Stack Developer · Technical Optimization**
+
+Responsibilities:
+- System architecture optimization
+- Unity engineering support
+- Feature implementation
+- Performance optimization
+- Code refactoring and maintenance
+- Technical troubleshooting
+
+GitHub: [https://github.com/Oppenseagull](https://github.com/Oppenseagull)
+
+> 本项目为黑客松期间快速迭代产物，由 **Qsa3Ger**（项目负责人）与 **Oppenseagull**（核心开发）协作完成。欢迎 Issue 与 PR。
 
 ---
 
@@ -442,8 +467,16 @@ LocalSecrets/zhipu_api_key.txt
 
 本项目目前**尚未附带开源 License 文件**。
 
-- 黑客松演示版本：© 2026 Chain Civilization Team
-- 如需二次开发或商业使用，请联系项目维护者
+- 黑客松演示版本：© 2026 Chain Civilization Team（Qsa3Ger · Oppenseagull）
+- 如需二次开发或商业使用，请联系 [项目维护者](https://github.com/Qsa3Ger)
+
+---
+
+## 📬 Contact
+
+For collaboration, feedback, or project inquiries:
+
+GitHub: [https://github.com/Qsa3Ger](https://github.com/Qsa3Ger)
 
 ---
 
