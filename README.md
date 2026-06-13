@@ -6,7 +6,7 @@
 [![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
 [![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
-[![GLM](https://img.shields.io/badge/AI-GLM--4--Flash-FF6B35)](https://open.bigmodel.cn/)
+[![GLM](https://img.shields.io/badge/AI-GLM--5.1-FF6B35)](https://open.bigmodel.cn/)
 
 ---
 
