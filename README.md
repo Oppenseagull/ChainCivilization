@@ -147,7 +147,7 @@ flowchart LR
 
 - 回答 **DAO、Blockchain、Token、Wallet、Reputation、Governance、Consensus** 等问题
 - 以**神秘、哲学、简洁**的口吻，将 Web3 概念翻译为文明演化叙事
-- 基于 **智谱 GLM-4-Flash** 实时生成回复，支持多轮对话
+- 基于 **智谱 GLM-5.1** 实时生成回复，支持多轮对话
 
 **交互方式：** 靠近 `Priest_NPC` → 按 **E** → 打开 TextMeshPro 对话面板 → 输入问题 → 发送
 
