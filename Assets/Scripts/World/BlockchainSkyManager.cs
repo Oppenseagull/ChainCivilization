@@ -3,61 +3,49 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Runtime-generated blockchain sky: highway blocks, moving hashes, data labels,
-/// and a distant civilization network. No external assets are required.
+/// Runtime-generated blockchain sky focused on floating block ruins, migrating
+/// data cubes, sparse hash glyphs, and only a few short energy links.
 /// </summary>
 public class BlockchainSkyManager : MonoBehaviour
 {
     const string GeneratedRootName = "BlockchainSky_Runtime";
     const string Hex = "0123456789ABCDEF";
 
-    [Header("Blockchain Highway")]
-    [SerializeField] Vector3 highwayCenter = new Vector3(120f, 135f, -100f);
-    [SerializeField] Vector3 highwayDirection = new Vector3(1f, 0.08f, -0.62f);
-    [SerializeField] int blockCount = 20;
-    [SerializeField] float blockSpacing = 23f;
-    [SerializeField] Vector3 blockScale = new Vector3(8.5f, 4.2f, 8.5f);
+    [Header("Floating Block Ruins")]
+    [SerializeField] int floatingBlockCount = 38;
+    [SerializeField] Vector3 skyCenter = new Vector3(110f, 0f, -110f);
+    [SerializeField] float skyRadius = 360f;
+    [SerializeField] float minHeight = 82f;
+    [SerializeField] float maxHeight = 198f;
 
-    [Header("Hash Flow")]
-    [SerializeField] int hashOrbCount = 34;
-    [SerializeField] float hashSpeed = 20f;
+    [Header("Migrating Data Cubes")]
+    [SerializeField] int dataCubeCount = 180;
+    [SerializeField] float migrationSpeed = 7f;
 
-    [Header("Floating Hash Text")]
-    [SerializeField] int floatingHashCount = 34;
-    [SerializeField] float textRadius = 280f;
-    [SerializeField] float textMinHeight = 78f;
-    [SerializeField] float textMaxHeight = 155f;
+    [Header("Sparse Hash Text")]
+    [SerializeField] int hashTextCount = 12;
 
-    [Header("Civilization Network")]
-    [SerializeField] int networkNodeCount = 18;
-    [SerializeField] int networkLineCount = 28;
-    [SerializeField] Vector3 networkCenter = new Vector3(110f, 110f, 135f);
-    [SerializeField] Vector3 networkBounds = new Vector3(390f, 58f, 230f);
+    [Header("Sparse Energy Links")]
+    [SerializeField] int energyLinkCount = 4;
 
     [Header("Motion")]
-    [SerializeField] float blockRotationSpeed = 12f;
     [SerializeField] int randomSeed = 928136;
+    [SerializeField] float blockRotationSpeed = 3.8f;
 
     Transform _root;
     Camera _camera;
     System.Random _rng;
 
-    Material _blockMaterial;
-    Material _blockCoreMaterial;
     Material _cyanMaterial;
     Material _blueMaterial;
     Material _purpleMaterial;
+    Material _deepBlueMaterial;
     Material _lineMaterial;
 
-    Vector3 _chainStart;
-    Vector3 _chainEnd;
-    Vector3 _chainDirection;
-    float _chainLength;
-
-    readonly List<Transform> _blocks = new List<Transform>();
-    readonly List<HashOrb> _hashOrbs = new List<HashOrb>();
+    readonly List<FloatingBlock> _blocks = new List<FloatingBlock>();
+    readonly List<DataCube> _dataCubes = new List<DataCube>();
     readonly List<FloatingHashText> _hashTexts = new List<FloatingHashText>();
-    readonly List<NetworkNode> _networkNodes = new List<NetworkNode>();
+    readonly List<EnergyLink> _energyLinks = new List<EnergyLink>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureSkyExists()
@@ -85,9 +73,9 @@ public class BlockchainSkyManager : MonoBehaviour
         }
 
         AnimateBlocks();
-        AnimateHashOrbs();
-        AnimateFloatingText();
-        AnimateNetworkNodes();
+        AnimateDataCubes();
+        AnimateHashTexts();
+        AnimateEnergyLinks();
     }
 
     void Build()
@@ -98,196 +86,206 @@ public class BlockchainSkyManager : MonoBehaviour
             Destroy(existing.gameObject);
         }
 
+        _blocks.Clear();
+        _dataCubes.Clear();
+        _hashTexts.Clear();
+        _energyLinks.Clear();
+
         _root = new GameObject(GeneratedRootName).transform;
         _root.SetParent(transform, false);
 
         CreateMaterials();
-        BuildHighway();
-        BuildHashOrbs();
-        BuildFloatingHashes();
-        BuildCivilizationNetwork();
+        BuildFloatingBlocks();
+        BuildMigratingDataCubes();
+        BuildSparseHashText();
+        BuildSparseEnergyLinks();
     }
 
     void CreateMaterials()
     {
-        _blockMaterial = CreateGlowMaterial("Blockchain_Block_Blue", new Color(0.15f, 0.58f, 1f, 1f), new Color(0.05f, 0.55f, 1f) * 2.4f, 0.55f);
-        _blockCoreMaterial = CreateGlowMaterial("Blockchain_Block_Core", new Color(0.42f, 0.88f, 1f, 1f), new Color(0.2f, 0.9f, 1f) * 3.2f, 0.2f);
-        _cyanMaterial = CreateGlowMaterial("Hash_Cyan", new Color(0.35f, 1f, 1f, 1f), new Color(0.15f, 1f, 1f) * 3f, 0.15f);
-        _blueMaterial = CreateGlowMaterial("Hash_Blue", new Color(0.28f, 0.58f, 1f, 1f), new Color(0.12f, 0.45f, 1f) * 2.8f, 0.18f);
-        _purpleMaterial = CreateGlowMaterial("Hash_Purple", new Color(0.75f, 0.32f, 1f, 1f), new Color(0.68f, 0.15f, 1f) * 2.8f, 0.18f);
+        _cyanMaterial = CreateGlowMaterial("Sky_Cyan_Glow", new Color(0.28f, 0.98f, 1f, 1f), new Color(0.08f, 0.9f, 1f) * 2.8f, 0.28f);
+        _blueMaterial = CreateGlowMaterial("Sky_Blue_Glow", new Color(0.13f, 0.48f, 1f, 1f), new Color(0.05f, 0.44f, 1f) * 2.6f, 0.38f);
+        _purpleMaterial = CreateGlowMaterial("Sky_Purple_Glow", new Color(0.62f, 0.18f, 1f, 1f), new Color(0.58f, 0.06f, 1f) * 2.7f, 0.34f);
+        _deepBlueMaterial = CreateGlowMaterial("Sky_Deep_Block", new Color(0.04f, 0.13f, 0.34f, 1f), new Color(0.02f, 0.18f, 0.5f) * 1.6f, 0.72f);
 
         Shader lineShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
-        _lineMaterial = new Material(lineShader)
-        {
-            name = "BlockchainSky_Line"
-        };
-        SetMaterialColor(_lineMaterial, new Color(0.35f, 0.86f, 1f, 0.7f));
+        _lineMaterial = new Material(lineShader) { name = "Sky_Sparse_Energy_Line" };
+        SetMaterialColor(_lineMaterial, new Color(0.38f, 0.9f, 1f, 0.45f));
         ConfigureTransparentMaterial(_lineMaterial);
     }
 
-    void BuildHighway()
+    void BuildFloatingBlocks()
     {
-        _chainDirection = highwayDirection.sqrMagnitude > 0.001f
-            ? highwayDirection.normalized
-            : new Vector3(1f, 0f, -0.5f).normalized;
-
-        _chainLength = Mathf.Max(200f, (blockCount - 1) * blockSpacing);
-        _chainStart = highwayCenter - _chainDirection * (_chainLength * 0.5f);
-        _chainEnd = highwayCenter + _chainDirection * (_chainLength * 0.5f);
-
-        for (int i = 0; i < blockCount; i++)
+        int guard = 0;
+        for (int i = 0; i < floatingBlockCount && guard < floatingBlockCount * 10; guard++)
         {
-            float t = blockCount <= 1 ? 0f : i / (float)(blockCount - 1);
-            Vector3 position = Vector3.Lerp(_chainStart, _chainEnd, t);
-            Transform block = CreateBlock(i, position);
-            _blocks.Add(block);
-        }
+            Vector3 position = RandomSkyPosition();
+            if (!IsFarEnoughFromBlocks(position, 26f))
+            {
+                continue;
+            }
 
-        for (int i = 0; i < blockCount - 1; i++)
-        {
-            CreateLine(
-                $"Block_Link_{i:00}",
-                _blocks[i].position,
-                _blocks[i + 1].position,
-                new Color(0.3f, 0.86f, 1f, 0.55f),
-                0.8f);
+            Vector3 scale = new Vector3(
+                NextFloat(3.5f, 15f),
+                NextFloat(2.6f, 10f),
+                NextFloat(3.5f, 15f));
+
+            Quaternion rotation = Quaternion.Euler(NextFloat(-18f, 18f), NextFloat(0f, 360f), NextFloat(-16f, 16f));
+            Transform block = CreateFloatingBlock(i, position, rotation, scale);
+            _blocks.Add(new FloatingBlock
+            {
+                Transform = block,
+                Origin = position,
+                Axis = RandomAxis(),
+                DriftAxis = RandomHorizontalAxis(),
+                Phase = NextFloat(0f, Mathf.PI * 2f),
+                DriftSpeed = NextFloat(0.12f, 0.34f),
+                DriftAmplitude = NextFloat(2.5f, 9.5f),
+                RotationSpeed = blockRotationSpeed * NextFloat(0.45f, 1.4f),
+                Light = block.GetComponent<Light>()
+            });
+
+            i++;
         }
     }
 
-    Transform CreateBlock(int index, Vector3 position)
+    Transform CreateFloatingBlock(int index, Vector3 position, Quaternion rotation, Vector3 scale)
     {
         GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        block.name = $"Block_{index:00}";
+        block.name = $"Sky_Ruin_Block_{index:00}";
         block.transform.SetParent(_root, true);
-        block.transform.position = position;
-        block.transform.rotation = Quaternion.LookRotation(_chainDirection, Vector3.up);
-        block.transform.localScale = blockScale;
+        block.transform.SetPositionAndRotation(position, rotation);
+        block.transform.localScale = scale;
         RemoveCollider(block);
-        SetSharedMaterial(block, _blockMaterial);
+        SetSharedMaterial(block, PickBlockMaterial(index));
 
-        GameObject core = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        core.name = "Block_Core";
-        core.transform.SetParent(block.transform, false);
-        core.transform.localPosition = Vector3.zero;
-        core.transform.localRotation = Quaternion.identity;
-        core.transform.localScale = new Vector3(0.18f, 1.08f, 1.08f);
-        RemoveCollider(core);
-        SetSharedMaterial(core, _blockCoreMaterial);
+        CreateBlockStripe(block.transform, "Data_Stripe_A", new Vector3(0f, 0.51f, 0f), new Vector3(1.04f, 0.035f, 0.18f), PickGlowMaterial(index + 1));
+        CreateBlockStripe(block.transform, "Data_Stripe_B", new Vector3(0f, -0.51f, 0f), new Vector3(0.18f, 0.035f, 1.04f), PickGlowMaterial(index + 2));
 
-        if (index % 4 == 0)
+        if (index % 5 == 0)
         {
             Light light = block.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = new Color(0.25f, 0.8f, 1f);
-            light.range = 46f;
-            light.intensity = 1.35f;
+            light.color = index % 2 == 0 ? new Color(0.25f, 0.8f, 1f) : new Color(0.65f, 0.25f, 1f);
+            light.range = 48f;
+            light.intensity = 1.15f;
             light.shadows = LightShadows.None;
         }
 
         return block.transform;
     }
 
-    void BuildHashOrbs()
+    void CreateBlockStripe(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Material material)
     {
-        for (int i = 0; i < hashOrbCount; i++)
+        GameObject stripe = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        stripe.name = name;
+        stripe.transform.SetParent(parent, false);
+        stripe.transform.localPosition = localPosition;
+        stripe.transform.localRotation = Quaternion.identity;
+        stripe.transform.localScale = localScale;
+        RemoveCollider(stripe);
+        SetSharedMaterial(stripe, material);
+    }
+
+    void BuildMigratingDataCubes()
+    {
+        if (_blocks.Count < 2)
         {
-            GameObject orb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            orb.name = $"Hash_Orb_{i:00}";
-            orb.transform.SetParent(_root, true);
-            orb.transform.localScale = Vector3.one * NextFloat(1.4f, 2.6f);
-            RemoveCollider(orb);
+            return;
+        }
 
-            Material material = PickHashMaterial(i);
-            SetSharedMaterial(orb, material);
+        for (int i = 0; i < dataCubeCount; i++)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = $"Hash_Data_Cube_{i:000}";
+            cube.transform.SetParent(_root, true);
+            float baseSize = NextFloat(0.12f, 0.32f);
+            cube.transform.localScale = Vector3.one * baseSize;
+            RemoveCollider(cube);
+            SetSharedMaterial(cube, PickGlowMaterial(i));
 
-            _hashOrbs.Add(new HashOrb
+            int from = NextInt(0, _blocks.Count);
+            int to = NextDifferentBlockIndex(from);
+            float mode = NextFloat();
+            Vector3 freeOrigin = RandomSkyPosition();
+
+            _dataCubes.Add(new DataCube
             {
-                Transform = orb.transform,
-                Offset = i / (float)hashOrbCount,
-                Speed = hashSpeed * NextFloat(0.75f, 1.35f),
-                LateralPhase = NextFloat(0f, Mathf.PI * 2f),
-                LateralAmplitude = NextFloat(2.4f, 6.8f)
+                Transform = cube.transform,
+                FromIndex = from,
+                ToIndex = to,
+                FreeOrigin = freeOrigin,
+                FreeAxis = RandomHorizontalAxis(),
+                Offset = NextFloat(),
+                Speed = migrationSpeed * NextFloat(0.35f, 1.18f),
+                Phase = NextFloat(0f, Mathf.PI * 2f),
+                ArcHeight = NextFloat(7f, 24f),
+                DriftAmplitude = NextFloat(2f, 11f),
+                Migrates = mode > 0.35f,
+                BaseSize = baseSize
             });
         }
     }
 
-    void BuildFloatingHashes()
+    void BuildSparseHashText()
     {
-        for (int i = 0; i < floatingHashCount; i++)
+        for (int i = 0; i < hashTextCount; i++)
         {
-            GameObject textObject = new GameObject($"Floating_Hash_{i:00}");
+            GameObject textObject = new GameObject($"Distant_Hash_Glyph_{i:00}");
             textObject.transform.SetParent(_root, true);
 
             TextMeshPro text = textObject.AddComponent<TextMeshPro>();
             text.text = NextHashString();
-            text.fontSize = NextFloat(9f, 15f);
+            text.fontSize = NextFloat(7f, 11f);
             text.alignment = TextAlignmentOptions.Center;
             text.enableWordWrapping = false;
             text.color = PickTextColor(i);
-            text.alpha = NextFloat(0.34f, 0.68f);
-            text.outlineColor = new Color(0.2f, 0.85f, 1f, 0.45f);
-            text.outlineWidth = 0.18f;
+            text.alpha = NextFloat(0.18f, 0.36f);
+            text.outlineColor = new Color(0.18f, 0.78f, 1f, 0.22f);
+            text.outlineWidth = 0.08f;
 
-            Vector3 position = RandomSkyPosition(textRadius, textMinHeight, textMaxHeight);
-            textObject.transform.position = position;
-            textObject.transform.localScale = Vector3.one * NextFloat(1.6f, 2.8f);
+            Vector3 position = RandomSkyPosition();
+            textObject.transform.position = position + Vector3.up * NextFloat(8f, 28f);
+            textObject.transform.localScale = Vector3.one * NextFloat(2.2f, 4.4f);
 
             _hashTexts.Add(new FloatingHashText
             {
                 Transform = textObject.transform,
-                Text = text,
-                Origin = position,
+                Origin = textObject.transform.position,
+                Axis = RandomHorizontalAxis(),
                 Phase = NextFloat(0f, Mathf.PI * 2f),
-                DriftSpeed = NextFloat(0.08f, 0.22f),
-                DriftAmplitude = NextFloat(4f, 12f),
-                DriftAxis = RandomHorizontalAxis()
+                Speed = NextFloat(0.04f, 0.12f),
+                Amplitude = NextFloat(4f, 12f)
             });
         }
     }
 
-    void BuildCivilizationNetwork()
+    void BuildSparseEnergyLinks()
     {
-        for (int i = 0; i < networkNodeCount; i++)
+        if (_blocks.Count < 2)
         {
-            Vector3 position = new Vector3(
-                networkCenter.x + NextFloat(-networkBounds.x, networkBounds.x) * 0.5f,
-                networkCenter.y + NextFloat(-networkBounds.y, networkBounds.y) * 0.5f,
-                networkCenter.z + NextFloat(-networkBounds.z, networkBounds.z) * 0.5f);
-
-            GameObject node = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            node.name = $"Civilization_Node_{i:00}";
-            node.transform.SetParent(_root, true);
-            node.transform.position = position;
-            node.transform.localScale = Vector3.one * NextFloat(3.2f, 6.2f);
-            RemoveCollider(node);
-            SetSharedMaterial(node, i % 3 == 0 ? _purpleMaterial : _cyanMaterial);
-
-            _networkNodes.Add(new NetworkNode
-            {
-                Transform = node.transform,
-                Origin = position,
-                Phase = NextFloat(0f, Mathf.PI * 2f),
-                Speed = NextFloat(0.06f, 0.18f),
-                Amplitude = NextFloat(2f, 7f)
-            });
+            return;
         }
 
-        for (int i = 0; i < networkLineCount; i++)
+        for (int i = 0; i < energyLinkCount; i++)
         {
-            int a = NextInt(0, _networkNodes.Count);
-            int b = NextInt(0, _networkNodes.Count);
-            if (a == b)
+            int start = NextInt(0, _blocks.Count);
+            int end = FindNearbyBlockIndex(start, 95f);
+
+            LineRenderer line = CreateLine(
+                $"Rare_Energy_Link_{i:00}",
+                _blocks[start].Transform.position,
+                _blocks[end].Transform.position,
+                i % 2 == 0 ? new Color(0.26f, 0.92f, 1f, 0.32f) : new Color(0.72f, 0.24f, 1f, 0.28f),
+                0.18f);
+
+            _energyLinks.Add(new EnergyLink
             {
-                b = (b + 1) % _networkNodes.Count;
-            }
-
-            Color color = i % 2 == 0
-                ? new Color(0.2f, 0.82f, 1f, 0.48f)
-                : new Color(0.72f, 0.25f, 1f, 0.42f);
-
-            LineRenderer line = CreateLine($"Civilization_Link_{i:00}", _networkNodes[a].Transform.position, _networkNodes[b].Transform.position, color, 0.45f);
-            _networkNodes[a].Lines.Add(new LinkedLine { Line = line, Other = _networkNodes[b].Transform, IsStart = true });
-            _networkNodes[b].Lines.Add(new LinkedLine { Line = line, Other = _networkNodes[a].Transform, IsStart = false });
+                Line = line,
+                StartIndex = start,
+                EndIndex = end,
+                Phase = NextFloat(0f, Mathf.PI * 2f)
+            });
         }
     }
 
@@ -303,11 +301,10 @@ public class BlockchainSkyManager : MonoBehaviour
         line.SetPosition(1, to);
         line.startWidth = width;
         line.endWidth = width;
-        line.numCapVertices = 4;
-        line.numCornerVertices = 2;
+        line.numCapVertices = 3;
         line.material = _lineMaterial;
         line.startColor = color;
-        line.endColor = new Color(color.r, color.g, Mathf.Min(1f, color.b + 0.1f), color.a * 0.65f);
+        line.endColor = new Color(color.r, color.g, Mathf.Min(1f, color.b + 0.1f), color.a * 0.55f);
         return line;
     }
 
@@ -315,45 +312,54 @@ public class BlockchainSkyManager : MonoBehaviour
     {
         for (int i = 0; i < _blocks.Count; i++)
         {
-            Transform block = _blocks[i];
-            if (block == null)
+            FloatingBlock block = _blocks[i];
+            float wave = Mathf.Sin(Time.time * block.DriftSpeed + block.Phase);
+            block.Transform.position = block.Origin + block.DriftAxis * (wave * block.DriftAmplitude) + Vector3.up * (Mathf.Cos(Time.time * block.DriftSpeed * 0.7f + block.Phase) * 2.6f);
+            block.Transform.Rotate(block.Axis, block.RotationSpeed * Time.deltaTime, Space.World);
+
+            if (block.Light != null)
             {
-                continue;
+                block.Light.intensity = 0.75f + Mathf.Abs(Mathf.Sin(Time.time * 0.9f + block.Phase)) * 0.75f;
             }
 
-            float speed = blockRotationSpeed * (i % 2 == 0 ? 1f : -0.7f);
-            block.Rotate(Vector3.up, speed * Time.deltaTime, Space.World);
-            block.Rotate(_chainDirection, speed * 0.32f * Time.deltaTime, Space.World);
+            _blocks[i] = block;
         }
     }
 
-    void AnimateHashOrbs()
+    void AnimateDataCubes()
     {
-        Vector3 lateral = Vector3.Cross(Vector3.up, _chainDirection).normalized;
-        if (lateral.sqrMagnitude < 0.001f)
+        for (int i = 0; i < _dataCubes.Count; i++)
         {
-            lateral = Vector3.right;
-        }
+            DataCube cube = _dataCubes[i];
+            if (cube.Migrates)
+            {
+                float t = Mathf.Repeat(cube.Offset + Time.time * cube.Speed * 0.006f, 1f);
+                Vector3 from = _blocks[cube.FromIndex].Transform.position;
+                Vector3 to = _blocks[cube.ToIndex].Transform.position;
+                Vector3 position = Vector3.Lerp(from, to, SmoothStep(t));
+                position += Vector3.up * (Mathf.Sin(t * Mathf.PI) * cube.ArcHeight);
+                position += cube.FreeAxis * (Mathf.Sin(Time.time * 0.85f + cube.Phase) * 1.8f);
+                cube.Transform.position = position;
+            }
+            else
+            {
+                float wave = Mathf.Sin(Time.time * cube.Speed * 0.08f + cube.Phase);
+                cube.Transform.position = cube.FreeOrigin + cube.FreeAxis * (wave * cube.DriftAmplitude) + Vector3.up * (Mathf.Cos(Time.time * 0.2f + cube.Phase) * 3f);
+            }
 
-        for (int i = 0; i < _hashOrbs.Count; i++)
-        {
-            HashOrb orb = _hashOrbs[i];
-            float cycle = Mathf.Repeat(orb.Offset + (Time.time * orb.Speed / Mathf.Max(1f, _chainLength)), 1f);
-            Vector3 basePosition = Vector3.Lerp(_chainStart, _chainEnd, cycle);
-            float wave = Mathf.Sin(Time.time * 1.4f + orb.LateralPhase) * orb.LateralAmplitude;
-            float vertical = Mathf.Cos(Time.time * 1.1f + orb.LateralPhase) * 1.8f;
-            orb.Transform.position = basePosition + lateral * wave + Vector3.up * vertical;
+            float pulse = 0.75f + Mathf.Abs(Mathf.Sin(Time.time * 1.8f + cube.Phase)) * 0.65f;
+            cube.Transform.localScale = Vector3.one * cube.BaseSize * pulse;
+            cube.Transform.Rotate(Vector3.up, 18f * Time.deltaTime, Space.World);
         }
     }
 
-    void AnimateFloatingText()
+    void AnimateHashTexts()
     {
         for (int i = 0; i < _hashTexts.Count; i++)
         {
             FloatingHashText item = _hashTexts[i];
-            float wave = Mathf.Sin(Time.time * item.DriftSpeed + item.Phase);
-            item.Transform.position = item.Origin + item.DriftAxis * (wave * item.DriftAmplitude) + Vector3.up * (Mathf.Cos(Time.time * item.DriftSpeed * 1.7f + item.Phase) * 2.5f);
-            item.Transform.Rotate(Vector3.up, 4f * Time.deltaTime, Space.World);
+            float wave = Mathf.Sin(Time.time * item.Speed + item.Phase);
+            item.Transform.position = item.Origin + item.Axis * (wave * item.Amplitude);
 
             if (_camera != null)
             {
@@ -366,68 +372,104 @@ public class BlockchainSkyManager : MonoBehaviour
         }
     }
 
-    void AnimateNetworkNodes()
+    void AnimateEnergyLinks()
     {
-        for (int i = 0; i < _networkNodes.Count; i++)
+        for (int i = 0; i < _energyLinks.Count; i++)
         {
-            NetworkNode node = _networkNodes[i];
-            node.Transform.position = node.Origin + Vector3.up * (Mathf.Sin(Time.time * node.Speed + node.Phase) * node.Amplitude);
+            EnergyLink link = _energyLinks[i];
+            Vector3 start = _blocks[link.StartIndex].Transform.position;
+            Vector3 end = _blocks[link.EndIndex].Transform.position;
+            link.Line.SetPosition(0, start);
+            link.Line.SetPosition(1, end);
 
-            for (int j = 0; j < node.Lines.Count; j++)
-            {
-                LinkedLine linked = node.Lines[j];
-                if (linked.Line == null || linked.Other == null)
-                {
-                    continue;
-                }
-
-                if (linked.IsStart)
-                {
-                    linked.Line.SetPosition(0, node.Transform.position);
-                    linked.Line.SetPosition(1, linked.Other.position);
-                }
-                else
-                {
-                    linked.Line.SetPosition(0, linked.Other.position);
-                    linked.Line.SetPosition(1, node.Transform.position);
-                }
-            }
+            Color color = link.Line.startColor;
+            float alpha = 0.08f + Mathf.Abs(Mathf.Sin(Time.time * 0.7f + link.Phase)) * 0.22f;
+            color.a = alpha;
+            link.Line.startColor = color;
+            link.Line.endColor = new Color(color.r, color.g, color.b, alpha * 0.45f);
         }
     }
 
-    Vector3 RandomSkyPosition(float radius, float minHeight, float maxHeight)
+    Vector3 RandomSkyPosition()
     {
         float angle = NextFloat(0f, Mathf.PI * 2f);
-        float distance = NextFloat(radius * 0.22f, radius);
+        float distance = Mathf.Sqrt(NextFloat()) * skyRadius;
         return new Vector3(
-            highwayCenter.x + Mathf.Cos(angle) * distance,
+            skyCenter.x + Mathf.Cos(angle) * distance,
             NextFloat(minHeight, maxHeight),
-            highwayCenter.z + Mathf.Sin(angle) * distance);
+            skyCenter.z + Mathf.Sin(angle) * distance);
     }
 
-    Vector3 RandomHorizontalAxis()
+    bool IsFarEnoughFromBlocks(Vector3 position, float minDistance)
     {
-        Vector3 axis = new Vector3(NextFloat(-1f, 1f), NextFloat(-0.18f, 0.28f), NextFloat(-1f, 1f));
-        return axis.sqrMagnitude > 0.001f ? axis.normalized : Vector3.right;
-    }
-
-    string NextHashString()
-    {
-        return $"0x{NextHex(4)}{NextHex(4)}...{NextHex(3)}";
-    }
-
-    string NextHex(int count)
-    {
-        char[] chars = new char[count];
-        for (int i = 0; i < chars.Length; i++)
+        float sqr = minDistance * minDistance;
+        for (int i = 0; i < _blocks.Count; i++)
         {
-            chars[i] = Hex[NextInt(0, Hex.Length)];
+            if ((_blocks[i].Origin - position).sqrMagnitude < sqr)
+            {
+                return false;
+            }
         }
 
-        return new string(chars);
+        return true;
     }
 
-    Material PickHashMaterial(int index)
+    int NextDifferentBlockIndex(int index)
+    {
+        int next = NextInt(0, _blocks.Count);
+        if (next == index)
+        {
+            next = (next + 1) % _blocks.Count;
+        }
+
+        return next;
+    }
+
+    int FindNearbyBlockIndex(int startIndex, float maxDistance)
+    {
+        float maxSqr = maxDistance * maxDistance;
+        int closest = NextDifferentBlockIndex(startIndex);
+        float closestSqr = (_blocks[startIndex].Origin - _blocks[closest].Origin).sqrMagnitude;
+
+        for (int i = 0; i < _blocks.Count; i++)
+        {
+            if (i == startIndex)
+            {
+                continue;
+            }
+
+            float sqr = (_blocks[startIndex].Origin - _blocks[i].Origin).sqrMagnitude;
+            if (sqr < closestSqr)
+            {
+                closest = i;
+                closestSqr = sqr;
+            }
+
+            if (sqr <= maxSqr && NextFloat() > 0.45f)
+            {
+                return i;
+            }
+        }
+
+        return closest;
+    }
+
+    Material PickBlockMaterial(int index)
+    {
+        switch (index % 4)
+        {
+            case 0:
+                return _deepBlueMaterial;
+            case 1:
+                return _blueMaterial;
+            case 2:
+                return _purpleMaterial;
+            default:
+                return _cyanMaterial;
+        }
+    }
+
+    Material PickGlowMaterial(int index)
     {
         switch (index % 3)
         {
@@ -445,12 +487,45 @@ public class BlockchainSkyManager : MonoBehaviour
         switch (index % 3)
         {
             case 0:
-                return new Color(0.45f, 1f, 1f, 0.62f);
+                return new Color(0.45f, 1f, 1f, 0.24f);
             case 1:
-                return new Color(0.45f, 0.72f, 1f, 0.58f);
+                return new Color(0.45f, 0.72f, 1f, 0.22f);
             default:
-                return new Color(0.78f, 0.38f, 1f, 0.55f);
+                return new Color(0.78f, 0.38f, 1f, 0.2f);
         }
+    }
+
+    Vector3 RandomAxis()
+    {
+        Vector3 axis = new Vector3(NextFloat(-1f, 1f), NextFloat(-1f, 1f), NextFloat(-1f, 1f));
+        return axis.sqrMagnitude > 0.001f ? axis.normalized : Vector3.up;
+    }
+
+    Vector3 RandomHorizontalAxis()
+    {
+        Vector3 axis = new Vector3(NextFloat(-1f, 1f), NextFloat(-0.15f, 0.35f), NextFloat(-1f, 1f));
+        return axis.sqrMagnitude > 0.001f ? axis.normalized : Vector3.right;
+    }
+
+    string NextHashString()
+    {
+        return $"0x{NextHex(4)}...{NextHex(3)}";
+    }
+
+    string NextHex(int count)
+    {
+        char[] chars = new char[count];
+        for (int i = 0; i < chars.Length; i++)
+        {
+            chars[i] = Hex[NextInt(0, Hex.Length)];
+        }
+
+        return new string(chars);
+    }
+
+    static float SmoothStep(float t)
+    {
+        return t * t * (3f - 2f * t);
     }
 
     static Material CreateGlowMaterial(string name, Color color, Color emission, float smoothness)
@@ -546,40 +621,50 @@ public class BlockchainSkyManager : MonoBehaviour
         return _rng.Next(minInclusive, maxExclusive);
     }
 
-    struct HashOrb
+    struct FloatingBlock
     {
         public Transform Transform;
+        public Vector3 Origin;
+        public Vector3 Axis;
+        public Vector3 DriftAxis;
+        public float Phase;
+        public float DriftSpeed;
+        public float DriftAmplitude;
+        public float RotationSpeed;
+        public Light Light;
+    }
+
+    struct DataCube
+    {
+        public Transform Transform;
+        public int FromIndex;
+        public int ToIndex;
+        public Vector3 FreeOrigin;
+        public Vector3 FreeAxis;
         public float Offset;
         public float Speed;
-        public float LateralPhase;
-        public float LateralAmplitude;
+        public float Phase;
+        public float ArcHeight;
+        public float DriftAmplitude;
+        public bool Migrates;
+        public float BaseSize;
     }
 
     struct FloatingHashText
     {
         public Transform Transform;
-        public TextMeshPro Text;
         public Vector3 Origin;
-        public Vector3 DriftAxis;
-        public float Phase;
-        public float DriftSpeed;
-        public float DriftAmplitude;
-    }
-
-    class NetworkNode
-    {
-        public Transform Transform;
-        public Vector3 Origin;
+        public Vector3 Axis;
         public float Phase;
         public float Speed;
         public float Amplitude;
-        public readonly List<LinkedLine> Lines = new List<LinkedLine>();
     }
 
-    struct LinkedLine
+    struct EnergyLink
     {
         public LineRenderer Line;
-        public Transform Other;
-        public bool IsStart;
+        public int StartIndex;
+        public int EndIndex;
+        public float Phase;
     }
 }
