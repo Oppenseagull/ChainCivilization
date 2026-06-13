@@ -223,7 +223,7 @@ flowchart TB
     subgraph AI["🔮 AI Layer"]
         NPC["AgentNPC"]
         UI["AgentUI"]
-        GLM["GLMAgent<br/>GLM-4-Flash API"]
+        GLM["GLMAgent<br/>GLM-5.1 API"]
     end
 
     subgraph Quest["📜 Quest Layer"]
