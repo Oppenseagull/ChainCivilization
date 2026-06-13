@@ -176,7 +176,7 @@ AgentNPC（ proximity + E 键 ）
 | 角色控制 | **Starter Assets — Third Person Controller** |
 | 相机 | **Cinemachine 3.1** |
 | 输入 | **Unity Input System 1.19** |
-| AI | **智谱 GLM API**（`glm-4-flash`） |
+| AI | **智谱 GLM API**（`glm-5.1`） |
 | 开发工具 | **Unity MCP**（`com.coplaydev.unity-mcp`）· **Cursor** |
 | 版本管理 | **GitHub** |
 
