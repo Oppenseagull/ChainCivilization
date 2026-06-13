@@ -30,13 +30,6 @@ sysinfo.txt
 [Aa]ssets/_Recovery.meta
 [Aa]ssets/_Recovery/
 
-# Locally imported source asset packs. Runtime uses curated copies under
-# Assets/Resources/SceneBeauty, so these large raw imports should not be pushed.
-[Aa]ssets/EmaceArt.meta
-[Aa]ssets/EmaceArt/
-[Aa]ssets/asoliddev - Modular Fantasy Character.meta
-[Aa]ssets/asoliddev - Modular Fantasy Character/
-
 # IDE/editor local state
 .vs/
 .vscode/

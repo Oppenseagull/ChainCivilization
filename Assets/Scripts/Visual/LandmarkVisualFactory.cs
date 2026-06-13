@@ -10,9 +10,41 @@ public static class LandmarkVisualFactory
 
     public static void ApplyDaoSanctuary(GameObject target, string daoName, Color accent, Color stone)
     {
-        // DAO visuals are intentionally left to the scene-authored objects.
-        // This avoids stacking imported buildings on top of the old gameplay landmarks.
-        return;
+        if (target == null)
+        {
+            return;
+        }
+
+        Transform root = PrepareRoot(target);
+        HideSupersededVisuals(target);
+
+        CreatePart(PrimitiveType.Cylinder, "Foundation", root, new Vector3(0f, 0.12f, 0f), new Vector3(4.8f, 0.12f, 4.8f), stone * 0.78f, 0f);
+        CreatePart(PrimitiveType.Cylinder, "Inner_Dais", root, new Vector3(0f, 0.34f, 0f), new Vector3(3.35f, 0.16f, 3.35f), stone, 0f);
+        CreatePart(PrimitiveType.Cylinder, "Signal_Ring", root, new Vector3(0f, 0.54f, 0f), new Vector3(4.05f, 0.035f, 4.05f), accent * 0.72f, 0.55f);
+
+        for (int i = 0; i < 6; i++)
+        {
+            float angle = i * 60f;
+            Vector3 pillarPos = Quaternion.Euler(0f, angle, 0f) * new Vector3(2.25f, 0f, 0f);
+            CreatePart(PrimitiveType.Cylinder, $"Pillar_{i}", root, pillarPos + Vector3.up * 1.22f, new Vector3(0.24f, 1.05f, 0.24f), stone * 0.92f, 0.04f);
+            CreatePart(PrimitiveType.Cube, $"Pillar_Cap_{i}", root, pillarPos + Vector3.up * 2.34f, new Vector3(0.78f, 0.18f, 0.78f), stone * 0.82f, 0.03f, Quaternion.Euler(0f, angle + 45f, 0f));
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            float angle = i * 120f + 30f;
+            Vector3 lintelPos = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, 0f, 1.95f);
+            GameObject lintel = CreatePart(PrimitiveType.Cube, $"High_Lintel_{i}", root, lintelPos + Vector3.up * 2.58f, new Vector3(2.2f, 0.2f, 0.26f), stone * 0.86f, 0.02f, Quaternion.Euler(0f, angle, 0f));
+            lintel.transform.localRotation *= Quaternion.Euler(0f, 90f, 0f);
+        }
+
+        CreatePart(PrimitiveType.Cube, "DAO_Name_Plate", root, new Vector3(0f, 0.72f, -2.48f), new Vector3(1.55f, 0.12f, 0.42f), accent * 0.68f, 0.5f);
+        CreateCrystal("Central_Shard", root, new Vector3(0f, 0.62f, 0f), 0.72f, 3.3f, accent, 1.4f, Quaternion.Euler(0f, 30f, 0f));
+        CreatePart(PrimitiveType.Cylinder, "Crown_Halo", root, new Vector3(0f, 3.25f, 0f), new Vector3(1.2f, 0.035f, 1.2f), accent, 1.0f, Quaternion.Euler(90f, 0f, 0f));
+
+        Color banner = Color.Lerp(accent, Color.white, 0.18f);
+        CreatePart(PrimitiveType.Cube, $"{daoName}_Banner_Left", root, new Vector3(-1.15f, 1.35f, -2.15f), new Vector3(0.14f, 1.35f, 0.38f), banner, 0.25f, Quaternion.Euler(0f, -12f, 0f));
+        CreatePart(PrimitiveType.Cube, $"{daoName}_Banner_Right", root, new Vector3(1.15f, 1.35f, -2.15f), new Vector3(0.14f, 1.35f, 0.38f), banner, 0.25f, Quaternion.Euler(0f, 12f, 0f));
     }
 
     public static void ApplyMoonCrystal(GameObject target)

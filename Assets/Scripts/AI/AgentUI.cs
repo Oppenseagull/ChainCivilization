@@ -39,7 +39,7 @@ public class AgentUI : MonoBehaviour
     static TMP_FontAsset _cjkFallbackFont;
     const string BundledChineseFontResource = "Fonts/NotoSansSC-VF";
     const string CommonChineseCharacters =
-        "\u5927\u796d\u53f8\u65c5\u8005\u9760\u8fd1\u706b\u5149\u4f60\u53ef\u4ee5\u95ee\u6211" +
+        "\u65c5\u8005\u9760\u8fd1\u706b\u5149\u4f60\u53ef\u4ee5\u95ee\u6211" +
         "\u58f0\u671b\u94b1\u5305\u6587\u660e\u89c4\u5219\u4e0e\u5bf9\u8bdd\u53d1\u9001\u5173\u95ed" +
         "\u5411\u63d0\u95ee\u7cfb\u7edf\u6b63\u5728\u56de\u5e94\u8bf7\u7a0d\u7b49\u8fd8\u6ca1\u6709" +
         "\u8fde\u63a5\u5230\u6838\u5fc3\u9519\u8bef\u8bf7\u6c42\u5931\u8d25\u53c2\u6570\u975e\u6cd5" +

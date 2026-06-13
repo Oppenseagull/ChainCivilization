@@ -29,7 +29,6 @@ public class BlueDAOSteleInteract : MonoBehaviour
             new Color(0.72f, 0.8f, 0.88f));
         VisualHierarchyOptions options = VisualHierarchyOptions.ForInteractive("BLUE DAO", new Color(0.62f, 0.84f, 1f));
         options.EnableFloat = false;
-        options.EnableSpin = false;
         options.EnableParticles = false;
         options.EnableGlowRing = false;
         options.LabelHeight = 5.5f;

@@ -50,7 +50,6 @@ public class RedDAOSteleInteract : MonoBehaviour
             new Color(0.82f, 0.68f, 0.56f));
         VisualHierarchyOptions options = VisualHierarchyOptions.ForInteractive("RED DAO", new Color(1f, 0.62f, 0.38f));
         options.EnableFloat = false;
-        options.EnableSpin = false;
         options.EnableParticles = false;
         options.EnableGlowRing = false;
         options.LabelHeight = 5.5f;
