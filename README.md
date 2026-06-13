@@ -2,17 +2,54 @@
 
 > **在遗忘之地苏醒，穿越三座 DAO 聚落，以 MOON 为血、以 Reputation 为信、以 Pass 为钥——在文明边界，铸造属于你的链上共识。**
 
-[![Unity](https://img.shields.io/badge/Unity-6000.4.10f1-000000?logo=unity&logoColor=white)](https://unity.com/)
-[![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
-[![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
-[![GLM](https://img.shields.io/badge/AI-GLM--5.1-FF6B35)](https://open.bigmodel.cn/)
+![Hackathon](https://img.shields.io/badge/Web3×AI-Hackathon-blue)
+![Unity](https://img.shields.io/badge/Unity-6-black)
+![GLM](https://img.shields.io/badge/GLM-Agent-green)
+![Status](https://img.shields.io/badge/Status-Demo-orange)
+
+---
+
+## 🎥 Demo Video
+
+<p align="center">
+  <a href="https://b23.tv/egT1Rci">
+    <img alt="Watch Chain Civilization Demo on Bilibili" src="https://img.shields.io/badge/▶_Watch_Demo_on_Bilibili-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white">
+  </a>
+</p>
+
+### 🎥 Live Demo
+
+**Watch Chain Civilization in action:**
+
+👉 **[▶ Watch on Bilibili](https://b23.tv/egT1Rci)**
+
+> 建议评委优先观看 Demo 视频（≈ 2 分钟），快速了解完整玩法闭环。
+
+---
+
+## ⚡ 核心玩法 · At a Glance
+
+| | |
+|---|---|
+| 🗺️ **探索** | 第三人称开放世界，穿越 Blue / Red / Green 三座 DAO 聚落 |
+| 🌙 **资源** | 收集 MOON · 积累 Reputation · 获取 DAO Pass |
+| 🏛️ **治理** | 体验开放协作、贡献激励、准入治理三种 Web3 文明理念 |
+| 🤖 **AI 神谕** | 大祭司 **Priest Z.AI**（GLM-5.1）实时解答链上概念 |
+| 🏴 **创世纪** | 抵达文明边界，选择规则，创建属于你的链上文明 |
+
+**完整旅程：** `苏醒 → Blue DAO → Red DAO → 采集 MOON → Green Pass → 文明边界 → 创建文明 ✓`
 
 ---
 
 ## ✨ 一句话介绍
 
 **Chain Civilization: Genesis** 是一款第三人称开放世界 Web3 教育游戏原型——玩家在 Unity 构建的「链上文明实验场」中，通过探索、交互与 AI 对话，亲手走完 **Token → Reputation → DAO Pass → Civilization** 的完整文明演化路径。
+
+[![Unity](https://img.shields.io/badge/Unity-6000.4.10f1-000000?logo=unity&logoColor=white)](https://unity.com/)
+[![URP](https://img.shields.io/badge/Render%20Pipeline-URP-5B6EE1)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@latest)
+[![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+[![Web3](https://img.shields.io/badge/Theme-Web3%20%2B%20DAO-7C3AED)](https://github.com/Oppenseagull/ChainCivilization)
+[![GLM](https://img.shields.io/badge/AI-GLM--5.1-FF6B35)](https://open.bigmodel.cn/)
 
 ---
 
@@ -477,6 +514,13 @@ GitHub: [https://github.com/Oppenseagull](https://github.com/Oppenseagull)
 For collaboration, feedback, or project inquiries:
 
 GitHub: [https://github.com/Qsa3Ger](https://github.com/Qsa3Ger)
+
+---
+
+## Demo Showcase
+
+**Video:**  
+https://b23.tv/egT1Rci
 
 ---
 
