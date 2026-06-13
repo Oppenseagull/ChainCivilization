@@ -9,7 +9,9 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(SphereCollider))]
 public class BoundaryTrigger : MonoBehaviour
 {
-    [SerializeField] float triggerRadius = 10f;
+    [SerializeField] float triggerRadius = 18f;
+    [SerializeField] float proximityFallbackRadius = 20f;
+    [SerializeField] float proximityVerticalTolerance = 6f;
     [SerializeField] float groundTriggerCenterHeight = 1f;
     [SerializeField] string titleMessage = "【文明边界】";
     [SerializeField] string loreLine1 = "这里是已知文明的尽头。";
@@ -138,6 +140,8 @@ public class BoundaryTrigger : MonoBehaviour
 
     void Update()
     {
+        SyncPlayerInsideByDistance();
+
         if (!_playerInside || _uiDismissed || !HasGreenPass())
         {
             return;
@@ -163,6 +167,8 @@ public class BoundaryTrigger : MonoBehaviour
 
     void LateUpdate()
     {
+        SyncPlayerInsideByDistance();
+
         if (!GameHUDCanvas.IsActive)
         {
             HUDPromptChannel.Clear(this);
@@ -217,10 +223,56 @@ public class BoundaryTrigger : MonoBehaviour
             return;
         }
 
+        if (IsPlayerInFallbackRange())
+        {
+            return;
+        }
+
         _playerInside = false;
         ResetDialog();
         SetActivatedObjects(false);
         HUDPromptChannel.Clear(this);
+    }
+
+    void SyncPlayerInsideByDistance()
+    {
+        if (_player == null)
+        {
+            return;
+        }
+
+        bool isNear = IsPlayerInFallbackRange();
+        if (isNear == _playerInside)
+        {
+            return;
+        }
+
+        _playerInside = isNear;
+        ResetDialog();
+        SetActivatedObjects(isNear);
+
+        if (!isNear)
+        {
+            HUDPromptChannel.Clear(this);
+        }
+    }
+
+    bool IsPlayerInFallbackRange()
+    {
+        if (_player == null)
+        {
+            return false;
+        }
+
+        Vector3 delta = _player.position - transform.position;
+        if (Mathf.Abs(delta.y) > proximityVerticalTolerance)
+        {
+            return false;
+        }
+
+        float radius = Mathf.Max(triggerRadius, proximityFallbackRadius);
+        Vector2 xz = new Vector2(delta.x, delta.z);
+        return xz.sqrMagnitude <= radius * radius;
     }
 
     void ResetDialog()
@@ -421,5 +473,7 @@ public class BoundaryTrigger : MonoBehaviour
     {
         Gizmos.color = new Color(0.35f, 0.7f, 1f, 0.25f);
         Gizmos.DrawWireSphere(transform.position, triggerRadius);
+        Gizmos.color = new Color(0.9f, 0.95f, 1f, 0.18f);
+        Gizmos.DrawWireSphere(transform.position, Mathf.Max(triggerRadius, proximityFallbackRadius));
     }
 }

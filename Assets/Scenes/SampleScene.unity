@@ -18047,7 +18047,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a83a8f3d238839c479af7c824e64f37d, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BoundaryTrigger
-  triggerRadius: 10
+  triggerRadius: 18
+  proximityFallbackRadius: 20
+  proximityVerticalTolerance: 6
   groundTriggerCenterHeight: 1
   titleMessage: "\u3010\u6587\u660E\u8FB9\u754C\u3011"
   loreLine1: "\u8FD9\u91CC\u662F\u5DF2\u77E5\u6587\u660E\u7684\u5C3D\u5934\u3002"
