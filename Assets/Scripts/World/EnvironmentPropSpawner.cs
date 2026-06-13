@@ -44,12 +44,6 @@ public class EnvironmentPropSpawner : MonoBehaviour
     [SerializeField] int energyTowerCount = 10;
     [SerializeField] int randomRockCount = 12;
 
-    [Header("Low Poly Overrides")]
-    public GameObject lowPolyRockPrefab;
-    public GameObject lowPolyTreePrefab;
-    public GameObject lowPolyRuinPrefab;
-    public GameObject lowPolyTowerPrefab;
-
     [Header("World Bounds (XZ)")]
     [SerializeField] Vector2 worldMin = new Vector2(-210f, -420f);
     [SerializeField] Vector2 worldMax = new Vector2(430f, 210f);
@@ -211,28 +205,6 @@ public class EnvironmentPropSpawner : MonoBehaviour
 
     GameObject BuildProp(PropKind kind, Vector3 world, float yaw, int index)
     {
-        bool useLowPoly = lowPolyRockPrefab != null;
-
-        if (useLowPoly)
-        {
-            switch (kind)
-            {
-                case PropKind.CivilizationRuin:
-                case PropKind.AncientRuin:
-                    return lowPolyRuinPrefab ? InstantiateOverride(lowPolyRuinPrefab, $"Env_Ruin_{index:00}", world, yaw) : null;
-                case PropKind.BlockchainNode:
-                case PropKind.EnergyTower:
-                    return lowPolyTowerPrefab ? InstantiateOverride(lowPolyTowerPrefab, $"Env_Tower_{index:00}", world, yaw) : null;
-                case PropKind.StonePillar:
-                    return lowPolyTreePrefab ? InstantiateOverride(lowPolyTreePrefab, $"Env_Tree_{index:00}", world, yaw) : null;
-                case PropKind.RandomRock:
-                case PropKind.AirdropStation:
-                    return lowPolyRockPrefab ? InstantiateOverride(lowPolyRockPrefab, $"Env_Rock_{index:00}", world, yaw) : null;
-                default:
-                    return null;
-            }
-        }
-
         switch (kind)
         {
             case PropKind.CivilizationRuin:
@@ -252,18 +224,6 @@ public class EnvironmentPropSpawner : MonoBehaviour
             default:
                 return null;
         }
-    }
-
-    GameObject InstantiateOverride(GameObject prefab, string name, Vector3 world, float yaw)
-    {
-        GameObject obj = Instantiate(prefab, world, Quaternion.Euler(0f, yaw, 0f));
-        obj.name = name;
-        obj.transform.SetParent(_propsRoot, true);
-
-        // Random scale variance
-        float scaleMultiplier = NextFloat(0.8f, 1.5f);
-        obj.transform.localScale = obj.transform.localScale * scaleMultiplier;
-        return obj;
     }
 
     GameObject BuildCivilizationRuin(Vector3 world, float yaw, int index)
